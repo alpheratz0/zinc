@@ -164,7 +164,7 @@ static void
 h_expose(xcb_expose_event_t *ev)
 {
 	(void) ev;
-	pizarra_render(conn, win, pizarra);
+	pizarra_render(pizarra);
 }
 
 static void
@@ -227,7 +227,7 @@ h_button_press(xcb_button_press_event_t *ev)
 		drawing = true;
 		addpoint(ev->event_x, ev->event_y, 0xff00f3, 10);
 		/* pizarra_set_pixel(pizarra, ev->event_x, ev->event_y, 0xffffff); */
-		pizarra_render(conn, win, pizarra);
+		pizarra_render(pizarra);
 		break;
 	case XCB_BUTTON_INDEX_2:
 		dragging.active = true;
@@ -273,14 +273,14 @@ h_motion_notify(xcb_motion_notify_event_t *ev)
 		dragging.x = ev->event_x;
 		dragging.y = ev->event_y;
 
-		pizarra_move(conn, win, pizarra, dx, dy);
-		pizarra_render(conn, win, pizarra);
+		pizarra_move(pizarra, dx, dy);
+		pizarra_render(pizarra);
 	}
 
 	if (drawing) {
 		addpoint(ev->event_x, ev->event_y, 0xff00f3, 10);
 		/* pizarra_set_pixel(pizarra, ev->event_x, ev->event_y, 0xffffff); */
-		pizarra_render(conn, win, pizarra);
+		pizarra_render(pizarra);
 	}
 	/* int32_t x, y; */
     /*  */
@@ -306,7 +306,7 @@ h_button_release(xcb_button_release_event_t *ev)
 static void
 h_configure_notify(xcb_configure_notify_event_t *ev)
 {
-	pizarra_set_viewport(conn, win, pizarra, ev->width, ev->height);
+	pizarra_set_viewport(pizarra, ev->width, ev->height);
 }
 
 static void

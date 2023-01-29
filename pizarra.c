@@ -49,6 +49,8 @@ struct pizarra {
 	int viewport_height;
 	int viewport_width;
 	struct chunk *root;
+	xcb_connection_t *conn;
+	xcb_window_t win;
 };
 
 
@@ -102,26 +104,26 @@ __chunk_last(const struct chunk *c)
 }
 
 static void
-__pizarra_get_rect(const struct pizarra *c, int *x, int *y, int *w, int *h)
+__pizarra_get_rect(const struct pizarra *piz, int *x, int *y, int *w, int *h)
 {
 	const struct chunk *first, *last;
 
-	first = __chunk_first(c->root);
-	last = __chunk_last(c->root);
+	first = __chunk_first(piz->root);
+	last = __chunk_last(piz->root);
 
 	*x = 0;
-	*y = first->index * c->root->height;
-	*w = c->root->width;
-	*h = (last->index - first->index + 1) * c->root->height;
+	*y = first->index * piz->root->height;
+	*w = piz->root->width;
+	*h = (last->index - first->index + 1) * piz->root->height;
 }
 
 static void
-__pizarra_get_viewport_rect(const struct pizarra *c, int *x, int *y, int *w, int *h)
+__pizarra_get_viewport_rect(const struct pizarra *piz, int *x, int *y, int *w, int *h)
 {
-	*x = c->pos.x;
-	*y = c->pos.y;
-	*w = c->viewport_width;
-	*h = c->viewport_height;
+	*x = piz->pos.x;
+	*y = piz->pos.y;
+	*w = piz->viewport_width;
+	*h = piz->viewport_height;
 }
 
 static void
@@ -219,7 +221,7 @@ __chunk_append(xcb_connection_t *conn, xcb_window_t win, struct chunk *c, int wi
 extern struct pizarra *
 pizarra_new(xcb_connection_t *conn, xcb_window_t win)
 {
-	struct pizarra *c;
+	struct pizarra *piz;
 	xcb_screen_t *scr;
 	int width, height;
 
@@ -231,19 +233,21 @@ pizarra_new(xcb_connection_t *conn, xcb_window_t win)
 	width = scr->width_in_pixels;
 	height = scr->height_in_pixels;
 
-	c = calloc(1, sizeof(struct pizarra));
+	piz = calloc(1, sizeof(struct pizarra));
 
-	c->root = __chunk_new(conn, win, width, height);
-	c->root->index = 0;
+	piz->conn = conn;
+	piz->win = win;
+	piz->root = __chunk_new(conn, win, width, height);
+	piz->root->index = 0;
 
-	__chunk_prepend(conn, win, c->root, width, height);
-	__chunk_append(conn, win, c->root, width, height);
+	__chunk_prepend(conn, win, piz->root, width, height);
+	__chunk_append(conn, win, piz->root, width, height);
 
-	return c;
+	return piz;
 }
 
 static void
-pizarra_regenerate_chunks(xcb_connection_t *conn, xcb_window_t win, struct pizarra *c)
+pizarra_regenerate_chunks(struct pizarra *piz)
 {
 	int x, y, w, h;
 	int cx, cy, cw, ch;
@@ -251,18 +255,18 @@ pizarra_regenerate_chunks(xcb_connection_t *conn, xcb_window_t win, struct pizar
 
 regenerate:
 	done = true;
-	__pizarra_get_viewport_rect(c, &x, &y, &w, &h);
-	__pizarra_get_rect(c, &cx, &cy, &cw, &ch);
+	__pizarra_get_viewport_rect(piz, &x, &y, &w, &h);
+	__pizarra_get_rect(piz, &cx, &cy, &cw, &ch);
 
 	if (y < cy) {
-		__chunk_prepend(conn, win, __chunk_first(c->root),
-				c->root->width, c->root->height);
+		__chunk_prepend(piz->conn, piz->win, __chunk_first(piz->root),
+				piz->root->width, piz->root->height);
 		done = false;
 	}
 
 	if (y + h > cy + ch) {
-		__chunk_append(conn, win, __chunk_last(c->root),
-				c->root->width, c->root->height);
+		__chunk_append(piz->conn, piz->win, __chunk_last(piz->root),
+				piz->root->width, piz->root->height);
 		done = false;
 	}
 
@@ -271,61 +275,61 @@ regenerate:
 }
 
 extern void
-pizarra_move(xcb_connection_t *conn, xcb_window_t win, struct pizarra *c, int offx, int offy)
+pizarra_move(struct pizarra *piz, int offx, int offy)
 {
-	c->pos.x += offx;
-	c->pos.y += offy;
+	piz->pos.x += offx;
+	piz->pos.y += offy;
 
-	pizarra_regenerate_chunks(conn, win, c);
+	pizarra_regenerate_chunks(piz);
 }
 
 extern void
-pizarra_set_viewport(xcb_connection_t *conn, xcb_window_t win, struct pizarra *c, int vw, int vh)
+pizarra_set_viewport(struct pizarra *piz, int vw, int vh)
 {
-	c->viewport_width = vw;
-	c->viewport_height = vh;
+	piz->viewport_width = vw;
+	piz->viewport_height = vh;
 
-	pizarra_regenerate_chunks(conn, win, c);
+	pizarra_regenerate_chunks(piz);
 
 	/* TODO: update position to re-center */
 	/*       ...                          */
 }
 
 extern void
-pizarra_render(xcb_connection_t *conn, xcb_window_t win, struct pizarra *c)
+pizarra_render(struct pizarra *piz)
 {
 	int x, y, w, h;
 	int cx, cy, cw, ch;
 	struct chunk *chunk;
 
-	__pizarra_get_viewport_rect(c, &x, &y, &w, &h);
+	__pizarra_get_viewport_rect(piz, &x, &y, &w, &h);
 
 	// FIXME: clear non chunk areas
-	xcb_clear_area(conn, 0, win, 0, 0, c->viewport_width, c->viewport_height);
+	xcb_clear_area(piz->conn, 0, piz->win, 0, 0, piz->viewport_width, piz->viewport_height);
 
-	for (chunk = __chunk_first(c->root); chunk; chunk = chunk->next) {
+	for (chunk = __chunk_first(piz->root); chunk; chunk = chunk->next) {
 		__chunk_get_rect(chunk, &cx, &cy, &cw, &ch);
 
 		if (x < cx + cw && y < cy + ch
 				&& x + w > cx && y + h > cy) {
-			xcb_copy_area(conn, chunk->x.shm.pixmap, win,
-					chunk->gc, 0, 0, cx - c->pos.x, cy - c->pos.y, cw, ch);
+			xcb_copy_area(piz->conn, chunk->x.shm.pixmap, piz->win,
+					chunk->gc, 0, 0, cx - piz->pos.x, cy - piz->pos.y, cw, ch);
 		}
 	}
 
-	xcb_flush(conn);
+	xcb_flush(piz->conn);
 }
 
 extern void
-pizarra_set_pixel(struct pizarra *c, int x, int y, uint32_t color)
+pizarra_set_pixel(struct pizarra *piz, int x, int y, uint32_t color)
 {
 	int chunkx, chunky;
 	struct chunk *chunk;
 
-	x += c->pos.x;
-	y += c->pos.y;
+	x += piz->pos.x;
+	y += piz->pos.y;
 
-	for (chunk = __chunk_first(c->root); chunk; chunk = chunk->next) {
+	for (chunk = __chunk_first(piz->root); chunk; chunk = chunk->next) {
 		chunkx = 0;
 		chunky = chunk->index * chunk->height;
 
@@ -338,15 +342,15 @@ pizarra_set_pixel(struct pizarra *c, int x, int y, uint32_t color)
 }
 
 extern int
-pizarra_get_pixel(struct pizarra *c, int x, int y, uint32_t *color)
+pizarra_get_pixel(struct pizarra *piz, int x, int y, uint32_t *color)
 {
 	int chunkx, chunky;
 	struct chunk *chunk;
 
-	x += c->pos.x;
-	y += c->pos.y;
+	x += piz->pos.x;
+	y += piz->pos.y;
 
-	for (chunk = __chunk_first(c->root); chunk; chunk = chunk->next) {
+	for (chunk = __chunk_first(piz->root); chunk; chunk = chunk->next) {
 		chunkx = 0;
 		chunky = chunk->index * chunk->height;
 

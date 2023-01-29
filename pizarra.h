@@ -9,16 +9,16 @@ extern struct pizarra *
 pizarra_new(xcb_connection_t *conn, xcb_window_t win);
 
 extern void
-pizarra_render(xcb_connection_t *conn, xcb_window_t win, struct pizarra *c);
+pizarra_render(struct pizarra *piz);
 
 extern void
-pizarra_move(xcb_connection_t *conn, xcb_window_t win, struct pizarra *c, int offx, int offy);
+pizarra_move(struct pizarra *piz, int offx, int offy);
 
 extern void
-pizarra_set_viewport(xcb_connection_t *conn, xcb_window_t win, struct pizarra *c, int vw, int vh);
+pizarra_set_viewport(struct pizarra *piz, int vw, int vh);
 
 extern void
-pizarra_set_pixel(struct pizarra *c, int x, int y, uint32_t color);
+pizarra_set_pixel(struct pizarra *piz, int x, int y, uint32_t color);
 
 extern int
-pizarra_get_pixel(struct pizarra *c, int x, int y, uint32_t *color);
+pizarra_get_pixel(struct pizarra *piz, int x, int y, uint32_t *color);
