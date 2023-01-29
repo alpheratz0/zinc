@@ -257,7 +257,7 @@ chalkboard_render(xcb_connection_t *conn, xcb_window_t win, struct chalkboard *c
 	int minx, miny, maxx, maxy;
 	const struct chunk *first, *chunk;
 
-	xcb_clear_area(conn, 0, win, 0, 0, c->root->width, c->root->height);
+	/* xcb_clear_area(conn, 0, win, 0, 0, c->root->width, c->root->height); */
 
 	minx = c->pos.x;
 	miny = c->pos.y;

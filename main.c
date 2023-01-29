@@ -1,3 +1,4 @@
+#include <math.h>
 #include <xcb/xcb.h>
 #include <xcb/xproto.h>
 #include <xcb/xcb_keysyms.h>
@@ -16,6 +17,7 @@ typedef struct {
 	int y;
 } DraggingInfo;
 
+static bool drawing;
 static DraggingInfo dragging;
 static struct chalkboard *chalkboard;
 static xcb_connection_t *conn;
@@ -181,12 +183,50 @@ h_key_release(xcb_key_release_event_t *ev)
 	key = xcb_key_symbols_get_keysym(ksyms, ev->detail, 0);
 }
 
+static inline uint8_t
+blerp(uint8_t from, uint8_t to, double v)
+{
+	return from + ((to - from) * v);
+}
+
+static uint32_t
+color_lerp(uint32_t from, uint32_t to, double v)
+{
+	uint8_t r, g, b;
+
+	v = v > 1 ? 1 : v < 0 ? 0 : v;
+	r = blerp((from >> 16) & 0xff, (to >> 16) & 0xff, v);
+	g = blerp((from >> 8) & 0xff, (to >> 8) & 0xff, v);
+	b = blerp(from & 0xff, to & 0xff, v);
+
+	return (r << 16) | (g << 8) | b;
+}
+
+static void
+addpoint(int x, int y, uint32_t color, int size)
+{
+	uint32_t prevcol;
+	int dx, dy;
+
+	for (dy = -size; dy < size; ++dy) {
+		for (dx = -size; dx < size; ++dx) {
+			if (dy*dy+dx*dx < size*size) {
+				if (chalkboard_get_pixel(chalkboard, x + dx, y + dy, &prevcol)) {
+					chalkboard_set_pixel(chalkboard, x + dx, y + dy, color_lerp(color, prevcol, sqrt(dy * dy + dx * dx) / size));
+				}
+			}
+		}
+	}
+}
+
 static void
 h_button_press(xcb_button_press_event_t *ev)
 {
 	switch (ev->detail) {
 	case XCB_BUTTON_INDEX_1:
-		chalkboard_set_pixel(chalkboard, ev->event_x, ev->event_y, 0xffffff);
+		drawing = true;
+		addpoint(ev->event_x, ev->event_y, 0xff00f3, 10);
+		/* chalkboard_set_pixel(chalkboard, ev->event_x, ev->event_y, 0xffffff); */
 		chalkboard_render(conn, win, chalkboard);
 		break;
 	case XCB_BUTTON_INDEX_2:
@@ -236,6 +276,12 @@ h_motion_notify(xcb_motion_notify_event_t *ev)
 		chalkboard_move(chalkboard, dx, dy);
 		chalkboard_render(conn, win, chalkboard);
 	}
+
+	if (drawing) {
+		addpoint(ev->event_x, ev->event_y, 0xff00f3, 10);
+		/* chalkboard_set_pixel(chalkboard, ev->event_x, ev->event_y, 0xffffff); */
+		chalkboard_render(conn, win, chalkboard);
+	}
 	/* int32_t x, y; */
     /*  */
 	/* if (state.dragging) { */
@@ -248,6 +294,7 @@ h_motion_notify(xcb_motion_notify_event_t *ev)
 static void
 h_button_release(xcb_button_release_event_t *ev)
 {
+	drawing = false;
 	dragging.active = false;
 	/* if (ev->detail == XCB_BUTTON_INDEX_1) { */
 	/* 	state.painting = 0; */
