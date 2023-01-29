@@ -5,5 +5,5 @@ if test "$1" = "clean"; then
 	rm -f xpizarra;
 else
 	set -x
-	cc pizarra.c utils.c main.c -o xpizarra -lxcb -lxcb-shm -lxcb-image -lxcb-keysyms -lxcb-cursor -lm
+	cc -DVERSION=\"0.0.1\" pizarra.c utils.c main.c -o xpizarra -lxcb -lxcb-shm -lxcb-image -lxcb-keysyms -lxcb-cursor -lm
 fi

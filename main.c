@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <math.h>
 #include <xcb/xcb.h>
 #include <xcb/xproto.h>
@@ -316,19 +317,19 @@ h_mapping_notify(xcb_mapping_notify_event_t *ev)
 		xcb_refresh_keyboard_mapping(ksyms, ev);
 }
 
-/* static void */
-/* usage(void) */
-/* { */
-/* 	puts("usage: apint [-fhv] [-l file] [-W width] [-H height]"); */
-/* 	exit(0); */
-/* } */
-/*  */
-/* static void */
-/* version(void) */
-/* { */
-/* 	puts("apint version "VERSION); */
-/* 	exit(0); */
-/* } */
+static void
+usage(void)
+{
+	puts("usage: xpizarra [-hv]");
+	exit(0);
+}
+
+static void
+version(void)
+{
+	puts("xpizarra version "VERSION);
+	exit(0);
+}
 
 int
 main(int argc, char **argv)
@@ -336,6 +337,12 @@ main(int argc, char **argv)
 	xcb_generic_event_t *ev;
 
 	while (++argv, --argc > 0) {
+		if ((*argv)[0] == '-' && (*argv)[1] != '\0' && (*argv)[2] == '\0') {
+			switch ((*argv)[1]) {
+				case 'h': usage(); break;
+				case 'v': version(); break;
+			}
+		}
 		die("invalid option %s", *argv); break;
 	}
 
