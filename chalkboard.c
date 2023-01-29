@@ -20,7 +20,7 @@ struct vec2 {
 };
 
 struct chunk {
-	struct vec2 pos;
+	int index;
 	int width;
 	int height;
 	uint32_t *px;
@@ -44,7 +44,9 @@ struct chunk {
 };
 
 struct chalkboard {
-	struct vec2 off; /* offset from origin */
+	struct vec2 pos;
+	int viewport_height;
+	int viewport_width;
 	enum chalkboard_direction dir;
 	struct chunk *root;
 };
@@ -79,7 +81,7 @@ __x_check_mit_shm_extension(xcb_connection_t *conn)
 }
 
 static struct chunk *
-__chunk_new(xcb_connection_t *conn, xcb_window_t win, int x, int y, int w, int h)
+__chunk_new(xcb_connection_t *conn, xcb_window_t win, int w, int h)
 {
 	struct chunk *c;
 	size_t szpx;
@@ -97,8 +99,6 @@ __chunk_new(xcb_connection_t *conn, xcb_window_t win, int x, int y, int w, int h
 	c = calloc(1, sizeof(struct chunk));
 	depth = scr->root_depth;
 
-	c->pos.x = x;
-	c->pos.y = y;
 	c->width = w;
 	c->height = h;
 
@@ -124,7 +124,7 @@ __chunk_new(xcb_connection_t *conn, xcb_window_t win, int x, int y, int w, int h
 
 		xcb_shm_attach(conn, c->x.shm.seg, c->x.shm.id, 0);
 		shmctl(c->x.shm.id, IPC_RMID, NULL);
-		memset(c->px, 255, szpx);
+		memset(c->px, 0, szpx);
 
 		xcb_shm_create_pixmap(conn, c->x.shm.pixmap, win, w, h,
 				depth, c->x.shm.seg, 0);
@@ -141,6 +141,46 @@ __chunk_new(xcb_connection_t *conn, xcb_window_t win, int x, int y, int w, int h
 	}
 
 	return c;
+}
+
+static struct chunk *
+__chunk_first(const struct chunk *c)
+{
+	struct chunk *first;
+	first = c;
+	while (first->previous)
+		first = first->previous;
+	return first;
+}
+
+static struct chunk *
+__chunk_last(const struct chunk *c)
+{
+	struct chunk *last;
+	last = c;
+	while (last->next)
+		last = last->next;
+	return last;
+}
+
+static void
+__chunk_prepend(xcb_connection_t *conn, xcb_window_t win, struct chunk *c, int width, int height)
+{
+	struct chunk *first;
+	first = __chunk_first(c);
+	first->previous = __chunk_new(conn, win, width, height);
+	first->previous->next = first;
+	first->previous->index = first->index - 1;
+}
+
+static void
+__chunk_apend(xcb_connection_t *conn, xcb_window_t win, struct chunk *c, int width, int height)
+{
+	struct chunk *last;
+	last = __chunk_last(c);
+	last->next = __chunk_new(conn, win, width, height);
+	last->next->previous = last;
+	last->next->index = last->index + 1;
 }
 
 extern struct chalkboard *
@@ -163,37 +203,146 @@ chalkboard_new(xcb_connection_t *conn, xcb_window_t win, enum chalkboard_directi
 	c = calloc(1, sizeof(struct chalkboard));
 
 	c->dir = dir;
-	c->root = __chunk_new(conn, win, 0, 0, width, height);
+	c->root = __chunk_new(conn, win, width, height);
+	c->root->index = 0;
 
-	if (dir == DIRECTION_HORIZONTAL) {
-		c->root->previous = __chunk_new(conn, win, -width, 0, width, height);
-		c->root->next = __chunk_new(conn, win, width, 0, width, height);
-	} else {
-		c->root->previous = __chunk_new(conn, win, 0, -height, width, height);
-		c->root->next = __chunk_new(conn, win, 0, height, width, height);
-	}
-
-	c->root->previous->next = c->root;
-	c->root->next->previous = c->root;
+	__chunk_prepend(conn, win, c->root, width, height);
+	__chunk_apend(conn, win, c->root, width, height);
 
 	return c;
 }
 
 extern void
+chalkboard_move(struct chalkboard *c, int offx, int offy)
+{
+	c->pos.x += offx;
+	c->pos.y += offy;
+}
+
+extern void
+chalkboard_set_viewport(struct chalkboard *c, int vw, int vh)
+{
+	c->viewport_width = vw;
+	c->viewport_height = vh;
+
+	/* TODO: update position to re-center */
+	/*       ...                          */
+}
+
+extern void
+chalkboard_get_full_area(const struct chalkboard *c, int *x, int *y, int *w, int *h)
+{
+	/* struct chalkboard *first, *last; */
+	/* first = __chunk_first(c->root); */
+	/* last = __chunk_last(c->root); */
+    /*  */
+	/* *x = *y = *w = *h = 0; */
+    /*  */
+	/* if (c->dir == DIRECTION_HORIZONTAL) { */
+	/* 	*w = (last->index - first->index + 1) * c->root->width; */
+	/* 	*h = c->root->height; */
+	/* } else { */
+	/* 	*w = c->root->width; */
+	/* 	*h = (last->index - first->index + 1) * c->root->height; */
+	/* } */
+    /*  */
+	/* *x = c->pos.x; */
+	/* *y = c->pos.x; */
+}
+
+extern void
 chalkboard_render(xcb_connection_t *conn, xcb_window_t win, struct chalkboard *c)
 {
-	xcb_copy_area(conn, c->root->x.shm.pixmap, win,
-			c->root->gc, 0, 0, 0, 0,
-			c->root->width, c->root->height);
+	int cminx, cminy, cmaxx, cmaxy;
+	int minx, miny, maxx, maxy;
+	const struct chunk *first, *chunk;
+
+	xcb_clear_area(conn, 0, win, 0, 0, c->root->width, c->root->height);
+
+	minx = c->pos.x;
+	miny = c->pos.y;
+	maxx = minx + c->viewport_width;
+	maxy = miny + c->viewport_height;
+
+	first = __chunk_first(c->root);
+
+	for (chunk = first; chunk; chunk = chunk->next) {
+		if (c->dir == DIRECTION_VERTICAL) {
+			cminx = 0;
+			cminy = chunk->index * chunk->height;
+		} else {
+			cminx = chunk->index * chunk->width;
+			cminy = 0;
+		}
+
+		cmaxx = cminx + chunk->width;
+		cmaxy = cminy + chunk->height;
+
+		if (minx < cmaxx && miny < cmaxy
+				&& maxx > cminx && maxy > cminy) {
+			xcb_copy_area(conn, chunk->x.shm.pixmap, win,
+					chunk->gc, 0, 0, cminx - c->pos.x, cminy - c->pos.y,
+					chunk->width, chunk->height);
+		}
+	}
 
 	xcb_flush(conn);
 }
 
-/* static int */
-/* __chunk_intersect(const struct chunk *c, int x, int y, int w, int h) */
-/* { */
-/* 	return x < (c->pos.x + c->width)     && */
-/* 		   y < (c->pos.y + c->height)    && */
-/* 		   (x + w) > c->pos.x            && */
-/* 		   (y + h) > c->pos.y; */
-/* } */
+extern void
+chalkboard_set_pixel(struct chalkboard *c, int x, int y, uint32_t color)
+{
+	int cminx, cminy, cmaxx, cmaxy;
+	struct chunk *chunk;
+
+	x += c->pos.x;
+	y += c->pos.y;
+
+	for (chunk = __chunk_first(c->root); chunk; chunk = chunk->next) {
+		if (c->dir == DIRECTION_VERTICAL) {
+			cminx = 0;
+			cminy = chunk->index * chunk->height;
+		} else {
+			cminx = chunk->index * chunk->width;
+			cminy = 0;
+		}
+
+		cmaxx = cminx + chunk->width;
+		cmaxy = cminy + chunk->height;
+
+		if (x >= cminx && x < cmaxx && y >= cminy && y < cmaxy) {
+			chunk->px[(y-cminy)*chunk->width+(x-cminx)] = color;
+			break;
+		}
+	}
+}
+
+extern int
+chalkboard_get_pixel(struct chalkboard *c, int x, int y, uint32_t *color)
+{
+	int cminx, cminy, cmaxx, cmaxy;
+	struct chunk *chunk;
+
+	x += c->pos.x;
+	y += c->pos.y;
+
+	for (chunk = __chunk_first(c->root); chunk; chunk = chunk->next) {
+		if (c->dir == DIRECTION_VERTICAL) {
+			cminx = 0;
+			cminy = chunk->index * chunk->height;
+		} else {
+			cminx = chunk->index * chunk->width;
+			cminy = 0;
+		}
+
+		cmaxx = cminx + chunk->width;
+		cmaxy = cminy + chunk->height;
+
+		if (x >= cminx && x < cmaxx && y >= cminy && y < cmaxy) {
+			*color = chunk->px[(y-cminy)*chunk->width+(x-cminx)];
+			return 1;
+		}
+	}
+
+	return 0;
+}

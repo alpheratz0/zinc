@@ -5,10 +5,19 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include "utils.h"
 #include "chalkboard.h"
 
+typedef struct {
+	bool active;
+	int x;
+	int y;
+} DraggingInfo;
+
+static DraggingInfo dragging;
+static struct chalkboard *chalkboard;
 static xcb_connection_t *conn;
 static xcb_screen_t *scr;
 static xcb_window_t win;
@@ -39,7 +48,7 @@ get_x11_atom(const char *name)
 }
 
 extern void
-createwin(void)
+xwininit(void)
 {
 	const char *wm_class,
 		       *wm_name;
@@ -80,7 +89,7 @@ createwin(void)
 		width, height, 0, XCB_WINDOW_CLASS_INPUT_OUTPUT,
 		scr->root_visual, XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK,
 		(const xcb_create_window_value_list_t []) {{
-			.background_pixel = 0,
+			.background_pixel = 0x333333,
 			.event_mask = XCB_EVENT_MASK_EXPOSURE |
 			              XCB_EVENT_MASK_KEY_PRESS |
 			              XCB_EVENT_MASK_KEY_RELEASE |
@@ -124,7 +133,7 @@ createwin(void)
 }
 
 extern void
-destroywin(void)
+xwindestroy(void)
 {
 	xcb_free_cursor(conn, cursor_hand);
 	xcb_free_cursor(conn, cursor_arrow);
@@ -134,16 +143,182 @@ destroywin(void)
 	xcb_disconnect(conn);
 }
 
-int
-main(void)
+static void
+h_client_message(xcb_client_message_event_t *ev)
 {
-	struct chalkboard *c;
+	xcb_atom_t WM_DELETE_WINDOW;
 
-	createwin();
+	WM_DELETE_WINDOW = get_x11_atom("WM_DELETE_WINDOW");
 
-	c = chalkboard_new(conn, win, DIRECTION_HORIZONTAL);
-	chalkboard_render(conn, win, c);
-	destroywin();
+	/* check if the wm sent a delete window message */
+	/* https://www.x.org/docs/ICCCM/icccm.pdf */
+	if (ev->data.data32[0] == WM_DELETE_WINDOW) {
+		xwindestroy();
+		exit(0);
+	}
+}
+
+static void
+h_expose(xcb_expose_event_t *ev)
+{
+	(void) ev;
+	chalkboard_render(conn, win, chalkboard);
+}
+
+static void
+h_key_press(xcb_key_press_event_t *ev)
+{
+	xcb_keysym_t key;
+
+	key = xcb_key_symbols_get_keysym(ksyms, ev->detail, 0);
+}
+
+static void
+h_key_release(xcb_key_release_event_t *ev)
+{
+	xcb_keysym_t key;
+
+	key = xcb_key_symbols_get_keysym(ksyms, ev->detail, 0);
+}
+
+static void
+h_button_press(xcb_button_press_event_t *ev)
+{
+	switch (ev->detail) {
+	case XCB_BUTTON_INDEX_1:
+		chalkboard_set_pixel(chalkboard, ev->event_x, ev->event_y, 0xffffff);
+		chalkboard_render(conn, win, chalkboard);
+		break;
+	case XCB_BUTTON_INDEX_2:
+		dragging.active = true;
+		dragging.x = ev->event_x;
+		dragging.y = ev->event_y;
+		break;
+	}
+	/* int32_t x, y; */
+    /*  */
+	/* switch (ev->detail) { */
+	/* 	case XCB_BUTTON_INDEX_1: */
+	/* 		if (!state.dragging && xwin2canvascoord(ev->event_x, ev->event_y, &x, &y)) { */
+	/* 			state.painting = 1; */
+	/* 			undohistorypush(); */
+	/* 			xcanvasaddpoint(x, y, state.color, state.brush_size); */
+	/* 		} */
+	/* 		break; */
+	/* 	case XCB_BUTTON_INDEX_2: */
+	/* 		drag_begin(ev->event_x, ev->event_y); */
+	/* 		break; */
+	/* 	case XCB_BUTTON_INDEX_3: */
+	/* 		if (xwin2canvascoord(ev->event_x, ev->event_y, &x, &y)) */
+	/* 			set_color(canvas.px[y*canvas.width+x]); */
+	/* 		break; */
+	/* 	case XCB_BUTTON_INDEX_4: */
+	/* 		set_brush_size(state.brush_size + 2); */
+	/* 		break; */
+	/* 	case XCB_BUTTON_INDEX_5: */
+	/* 		set_brush_size(state.brush_size - 2); */
+	/* 		break; */
+	/* } */
+}
+
+static void
+h_motion_notify(xcb_motion_notify_event_t *ev)
+{
+	int dx, dy;
+
+	if (dragging.active) {
+		dx = dragging.x - ev->event_x;
+		dy = dragging.y - ev->event_y;
+
+		dragging.x = ev->event_x;
+		dragging.y = ev->event_y;
+
+		chalkboard_move(chalkboard, dx, dy);
+		chalkboard_render(conn, win, chalkboard);
+	}
+	/* int32_t x, y; */
+    /*  */
+	/* if (state.dragging) { */
+	/* 	drag_update(ev->event_x, ev->event_y); */
+	/* } else if (state.painting && xwin2canvascoord(ev->event_x, ev->event_y, &x, &y)) { */
+	/* 	xcanvasaddpoint(x, y, state.color, state.brush_size); */
+	/* } */
+}
+
+static void
+h_button_release(xcb_button_release_event_t *ev)
+{
+	dragging.active = false;
+	/* if (ev->detail == XCB_BUTTON_INDEX_1) { */
+	/* 	state.painting = 0; */
+	/* } else if (ev->detail == XCB_BUTTON_INDEX_2) { */
+	/* 	drag_end(ev->event_x, ev->event_y); */
+	/* } */
+}
+
+static void
+h_configure_notify(xcb_configure_notify_event_t *ev)
+{
+	chalkboard_set_viewport(chalkboard, ev->width, ev->height);
+}
+
+static void
+h_mapping_notify(xcb_mapping_notify_event_t *ev)
+{
+	if (ev->count > 0)
+		xcb_refresh_keyboard_mapping(ksyms, ev);
+}
+
+/* static void */
+/* usage(void) */
+/* { */
+/* 	puts("usage: apint [-fhv] [-l file] [-W width] [-H height]"); */
+/* 	exit(0); */
+/* } */
+/*  */
+/* static void */
+/* version(void) */
+/* { */
+/* 	puts("apint version "VERSION); */
+/* 	exit(0); */
+/* } */
+
+int
+main(int argc, char **argv)
+{
+	enum chalkboard_direction cdir;
+	xcb_generic_event_t *ev;
+
+	cdir = DIRECTION_HORIZONTAL;
+
+	while (++argv, --argc > 0) {
+		if (!strcmp(*argv, "-horizontal")) cdir = DIRECTION_HORIZONTAL;
+		else if (!strcmp(*argv, "-vertical")) cdir = DIRECTION_VERTICAL;
+		else die("invalid option %s", *argv); break;
+	}
+
+	xwininit();
+
+	chalkboard = chalkboard_new(conn, win, cdir);
+
+	while ((ev = xcb_wait_for_event(conn))) {
+		switch (ev->response_type & ~0x80) {
+			case XCB_CLIENT_MESSAGE:     h_client_message((void *)(ev)); break;
+			case XCB_EXPOSE:             h_expose((void *)(ev)); break;
+			case XCB_KEY_PRESS:          h_key_press((void *)(ev)); break;
+			case XCB_KEY_RELEASE:        h_key_release((void *)(ev)); break;
+			case XCB_BUTTON_PRESS:       h_button_press((void *)(ev)); break;
+			case XCB_MOTION_NOTIFY:      h_motion_notify((void *)(ev)); break;
+			case XCB_BUTTON_RELEASE:     h_button_release((void *)(ev)); break;
+			case XCB_CONFIGURE_NOTIFY:   h_configure_notify((void *)(ev)); break;
+			case XCB_MAPPING_NOTIFY:     h_mapping_notify((void *)(ev)); break;
+		}
+
+		free(ev);
+	}
+
+	/* chalkboard_destroy(conn, win, chalkboard); */
+	xwindestroy();
 
 	return 0;
 }
