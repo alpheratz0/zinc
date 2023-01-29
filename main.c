@@ -9,7 +9,7 @@
 #include <stdbool.h>
 
 #include "utils.h"
-#include "chalkboard.h"
+#include "pizarra.h"
 
 typedef struct {
 	bool active;
@@ -19,7 +19,7 @@ typedef struct {
 
 static bool drawing;
 static DraggingInfo dragging;
-static struct chalkboard *chalkboard;
+static struct pizarra *pizarra;
 static xcb_connection_t *conn;
 static xcb_screen_t *scr;
 static xcb_window_t win;
@@ -104,12 +104,12 @@ xwininit(void)
 
 	_NET_WM_NAME = get_x11_atom("_NET_WM_NAME");
 	UTF8_STRING = get_x11_atom("UTF8_STRING");
-	wm_name = "xchalkboard";
+	wm_name = "xpizarra";
 
 	xcb_change_property(conn, XCB_PROP_MODE_REPLACE, win,
 		_NET_WM_NAME, UTF8_STRING, 8, strlen(wm_name), wm_name);
 
-	wm_class = "xchalkboard\0xchalkboard\0";
+	wm_class = "xpizarra\0xpizarra\0";
 	xcb_change_property(conn, XCB_PROP_MODE_REPLACE, win, XCB_ATOM_WM_CLASS,
 		XCB_ATOM_STRING, 8, strlen(wm_class), wm_class);
 
@@ -164,7 +164,7 @@ static void
 h_expose(xcb_expose_event_t *ev)
 {
 	(void) ev;
-	chalkboard_render(conn, win, chalkboard);
+	pizarra_render(conn, win, pizarra);
 }
 
 static void
@@ -211,8 +211,8 @@ addpoint(int x, int y, uint32_t color, int size)
 	for (dy = -size; dy < size; ++dy) {
 		for (dx = -size; dx < size; ++dx) {
 			if (dy*dy+dx*dx < size*size) {
-				if (chalkboard_get_pixel(chalkboard, x + dx, y + dy, &prevcol)) {
-					chalkboard_set_pixel(chalkboard, x + dx, y + dy, color_lerp(color, prevcol, sqrt(dy * dy + dx * dx) / size));
+				if (pizarra_get_pixel(pizarra, x + dx, y + dy, &prevcol)) {
+					pizarra_set_pixel(pizarra, x + dx, y + dy, color_lerp(color, prevcol, sqrt(dy * dy + dx * dx) / size));
 				}
 			}
 		}
@@ -226,8 +226,8 @@ h_button_press(xcb_button_press_event_t *ev)
 	case XCB_BUTTON_INDEX_1:
 		drawing = true;
 		addpoint(ev->event_x, ev->event_y, 0xff00f3, 10);
-		/* chalkboard_set_pixel(chalkboard, ev->event_x, ev->event_y, 0xffffff); */
-		chalkboard_render(conn, win, chalkboard);
+		/* pizarra_set_pixel(pizarra, ev->event_x, ev->event_y, 0xffffff); */
+		pizarra_render(conn, win, pizarra);
 		break;
 	case XCB_BUTTON_INDEX_2:
 		dragging.active = true;
@@ -273,14 +273,14 @@ h_motion_notify(xcb_motion_notify_event_t *ev)
 		dragging.x = ev->event_x;
 		dragging.y = ev->event_y;
 
-		chalkboard_move(conn, win, chalkboard, dx, dy);
-		chalkboard_render(conn, win, chalkboard);
+		pizarra_move(conn, win, pizarra, dx, dy);
+		pizarra_render(conn, win, pizarra);
 	}
 
 	if (drawing) {
 		addpoint(ev->event_x, ev->event_y, 0xff00f3, 10);
-		/* chalkboard_set_pixel(chalkboard, ev->event_x, ev->event_y, 0xffffff); */
-		chalkboard_render(conn, win, chalkboard);
+		/* pizarra_set_pixel(pizarra, ev->event_x, ev->event_y, 0xffffff); */
+		pizarra_render(conn, win, pizarra);
 	}
 	/* int32_t x, y; */
     /*  */
@@ -306,7 +306,7 @@ h_button_release(xcb_button_release_event_t *ev)
 static void
 h_configure_notify(xcb_configure_notify_event_t *ev)
 {
-	chalkboard_set_viewport(conn, win, chalkboard, ev->width, ev->height);
+	pizarra_set_viewport(conn, win, pizarra, ev->width, ev->height);
 }
 
 static void
@@ -341,7 +341,7 @@ main(int argc, char **argv)
 
 	xwininit();
 
-	chalkboard = chalkboard_new(conn, win);
+	pizarra = pizarra_new(conn, win);
 
 	while ((ev = xcb_wait_for_event(conn))) {
 		switch (ev->response_type & ~0x80) {
@@ -359,7 +359,7 @@ main(int argc, char **argv)
 		free(ev);
 	}
 
-	/* chalkboard_destroy(conn, win, chalkboard); */
+	/* pizarra_destroy(conn, win, pizarra); */
 	xwindestroy();
 
 	return 0;

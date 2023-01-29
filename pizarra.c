@@ -12,7 +12,7 @@
 #include <stdint.h>
 #include <errno.h>
 
-#include "chalkboard.h"
+#include "pizarra.h"
 #include "utils.h"
 
 struct vec2 {
@@ -44,7 +44,7 @@ struct chunk {
 	struct chunk *previous;
 };
 
-struct chalkboard {
+struct pizarra {
 	struct vec2 pos;
 	int viewport_height;
 	int viewport_width;
@@ -102,7 +102,7 @@ __chunk_last(const struct chunk *c)
 }
 
 static void
-__chalkboard_get_rect(const struct chalkboard *c, int *x, int *y, int *w, int *h)
+__pizarra_get_rect(const struct pizarra *c, int *x, int *y, int *w, int *h)
 {
 	const struct chunk *first, *last;
 
@@ -116,7 +116,7 @@ __chalkboard_get_rect(const struct chalkboard *c, int *x, int *y, int *w, int *h
 }
 
 static void
-__chalkboard_get_viewport_rect(const struct chalkboard *c, int *x, int *y, int *w, int *h)
+__pizarra_get_viewport_rect(const struct pizarra *c, int *x, int *y, int *w, int *h)
 {
 	*x = c->pos.x;
 	*y = c->pos.y;
@@ -216,10 +216,10 @@ __chunk_append(xcb_connection_t *conn, xcb_window_t win, struct chunk *c, int wi
 	last->next->index = last->index + 1;
 }
 
-extern struct chalkboard *
-chalkboard_new(xcb_connection_t *conn, xcb_window_t win)
+extern struct pizarra *
+pizarra_new(xcb_connection_t *conn, xcb_window_t win)
 {
-	struct chalkboard *c;
+	struct pizarra *c;
 	xcb_screen_t *scr;
 	int width, height;
 
@@ -231,7 +231,7 @@ chalkboard_new(xcb_connection_t *conn, xcb_window_t win)
 	width = scr->width_in_pixels;
 	height = scr->height_in_pixels;
 
-	c = calloc(1, sizeof(struct chalkboard));
+	c = calloc(1, sizeof(struct pizarra));
 
 	c->root = __chunk_new(conn, win, width, height);
 	c->root->index = 0;
@@ -243,7 +243,7 @@ chalkboard_new(xcb_connection_t *conn, xcb_window_t win)
 }
 
 static void
-chalkboard_regenerate_chunks(xcb_connection_t *conn, xcb_window_t win, struct chalkboard *c)
+pizarra_regenerate_chunks(xcb_connection_t *conn, xcb_window_t win, struct pizarra *c)
 {
 	int x, y, w, h;
 	int cx, cy, cw, ch;
@@ -251,8 +251,8 @@ chalkboard_regenerate_chunks(xcb_connection_t *conn, xcb_window_t win, struct ch
 
 regenerate:
 	done = true;
-	__chalkboard_get_viewport_rect(c, &x, &y, &w, &h);
-	__chalkboard_get_rect(c, &cx, &cy, &cw, &ch);
+	__pizarra_get_viewport_rect(c, &x, &y, &w, &h);
+	__pizarra_get_rect(c, &cx, &cy, &cw, &ch);
 
 	if (y < cy) {
 		__chunk_prepend(conn, win, __chunk_first(c->root),
@@ -271,34 +271,34 @@ regenerate:
 }
 
 extern void
-chalkboard_move(xcb_connection_t *conn, xcb_window_t win, struct chalkboard *c, int offx, int offy)
+pizarra_move(xcb_connection_t *conn, xcb_window_t win, struct pizarra *c, int offx, int offy)
 {
 	c->pos.x += offx;
 	c->pos.y += offy;
 
-	chalkboard_regenerate_chunks(conn, win, c);
+	pizarra_regenerate_chunks(conn, win, c);
 }
 
 extern void
-chalkboard_set_viewport(xcb_connection_t *conn, xcb_window_t win, struct chalkboard *c, int vw, int vh)
+pizarra_set_viewport(xcb_connection_t *conn, xcb_window_t win, struct pizarra *c, int vw, int vh)
 {
 	c->viewport_width = vw;
 	c->viewport_height = vh;
 
-	chalkboard_regenerate_chunks(conn, win, c);
+	pizarra_regenerate_chunks(conn, win, c);
 
 	/* TODO: update position to re-center */
 	/*       ...                          */
 }
 
 extern void
-chalkboard_render(xcb_connection_t *conn, xcb_window_t win, struct chalkboard *c)
+pizarra_render(xcb_connection_t *conn, xcb_window_t win, struct pizarra *c)
 {
 	int x, y, w, h;
 	int cx, cy, cw, ch;
 	struct chunk *chunk;
 
-	__chalkboard_get_viewport_rect(c, &x, &y, &w, &h);
+	__pizarra_get_viewport_rect(c, &x, &y, &w, &h);
 
 	// FIXME: clear non chunk areas
 	xcb_clear_area(conn, 0, win, 0, 0, c->viewport_width, c->viewport_height);
@@ -317,7 +317,7 @@ chalkboard_render(xcb_connection_t *conn, xcb_window_t win, struct chalkboard *c
 }
 
 extern void
-chalkboard_set_pixel(struct chalkboard *c, int x, int y, uint32_t color)
+pizarra_set_pixel(struct pizarra *c, int x, int y, uint32_t color)
 {
 	int chunkx, chunky;
 	struct chunk *chunk;
@@ -338,7 +338,7 @@ chalkboard_set_pixel(struct chalkboard *c, int x, int y, uint32_t color)
 }
 
 extern int
-chalkboard_get_pixel(struct chalkboard *c, int x, int y, uint32_t *color)
+pizarra_get_pixel(struct pizarra *c, int x, int y, uint32_t *color)
 {
 	int chunkx, chunky;
 	struct chunk *chunk;
