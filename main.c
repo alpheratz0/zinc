@@ -12,14 +12,20 @@
 #include "utils.h"
 #include "pizarra.h"
 
-typedef struct {
+struct dragging_info {
 	bool active;
 	int x;
 	int y;
-} DraggingInfo;
+};
 
-static bool drawing;
-static DraggingInfo dragging;
+struct drawing_info {
+	bool active;
+	uint32_t color;
+	int brush_size;
+};
+
+static struct drawing_info drawing;
+static struct dragging_info dragging;
 static struct pizarra *pizarra;
 static xcb_connection_t *conn;
 static xcb_screen_t *scr;
@@ -211,11 +217,13 @@ addpoint(int x, int y, uint32_t color, int size)
 
 	for (dy = -size; dy < size; ++dy) {
 		for (dx = -size; dx < size; ++dx) {
-			if (dy*dy+dx*dx < size*size) {
-				if (pizarra_get_pixel(pizarra, x + dx, y + dy, &prevcol)) {
-					pizarra_set_pixel(pizarra, x + dx, y + dy, color_lerp(color, prevcol, sqrt(dy * dy + dx * dx) / size));
-				}
-			}
+			if (dy*dy+dx*dx >= size*size)
+				continue;
+			if (!pizarra_get_pixel(pizarra, x + dx, y + dy, &prevcol))
+				continue;
+			pizarra_set_pixel(pizarra, x + dx, y + dy,
+					color_lerp(color, prevcol,
+						sqrt(dy * dy + dx * dx) / size));
 		}
 	}
 }
@@ -225,41 +233,20 @@ h_button_press(xcb_button_press_event_t *ev)
 {
 	switch (ev->detail) {
 	case XCB_BUTTON_INDEX_1:
-		drawing = true;
-		addpoint(ev->event_x, ev->event_y, 0xff00f3, 10);
-		/* pizarra_set_pixel(pizarra, ev->event_x, ev->event_y, 0xffffff); */
-		pizarra_render(pizarra);
+		if (!dragging.active) {
+			drawing.active = true;
+			addpoint(ev->event_x, ev->event_y, drawing.color, drawing.brush_size);
+			pizarra_render(pizarra);
+		}
 		break;
 	case XCB_BUTTON_INDEX_2:
-		dragging.active = true;
-		dragging.x = ev->event_x;
-		dragging.y = ev->event_y;
+		if (!drawing.active) {
+			dragging.active = true;
+			dragging.x = ev->event_x;
+			dragging.y = ev->event_y;
+		}
 		break;
 	}
-	/* int32_t x, y; */
-    /*  */
-	/* switch (ev->detail) { */
-	/* 	case XCB_BUTTON_INDEX_1: */
-	/* 		if (!state.dragging && xwin2canvascoord(ev->event_x, ev->event_y, &x, &y)) { */
-	/* 			state.painting = 1; */
-	/* 			undohistorypush(); */
-	/* 			xcanvasaddpoint(x, y, state.color, state.brush_size); */
-	/* 		} */
-	/* 		break; */
-	/* 	case XCB_BUTTON_INDEX_2: */
-	/* 		drag_begin(ev->event_x, ev->event_y); */
-	/* 		break; */
-	/* 	case XCB_BUTTON_INDEX_3: */
-	/* 		if (xwin2canvascoord(ev->event_x, ev->event_y, &x, &y)) */
-	/* 			set_color(canvas.px[y*canvas.width+x]); */
-	/* 		break; */
-	/* 	case XCB_BUTTON_INDEX_4: */
-	/* 		set_brush_size(state.brush_size + 2); */
-	/* 		break; */
-	/* 	case XCB_BUTTON_INDEX_5: */
-	/* 		set_brush_size(state.brush_size - 2); */
-	/* 		break; */
-	/* } */
 }
 
 static void
@@ -278,30 +265,23 @@ h_motion_notify(xcb_motion_notify_event_t *ev)
 		pizarra_render(pizarra);
 	}
 
-	if (drawing) {
-		addpoint(ev->event_x, ev->event_y, 0xff00f3, 10);
-		/* pizarra_set_pixel(pizarra, ev->event_x, ev->event_y, 0xffffff); */
+	if (drawing.active) {
+		addpoint(ev->event_x, ev->event_y, drawing.color, drawing.brush_size);
 		pizarra_render(pizarra);
 	}
-	/* int32_t x, y; */
-    /*  */
-	/* if (state.dragging) { */
-	/* 	drag_update(ev->event_x, ev->event_y); */
-	/* } else if (state.painting && xwin2canvascoord(ev->event_x, ev->event_y, &x, &y)) { */
-	/* 	xcanvasaddpoint(x, y, state.color, state.brush_size); */
-	/* } */
 }
 
 static void
 h_button_release(xcb_button_release_event_t *ev)
 {
-	drawing = false;
-	dragging.active = false;
-	/* if (ev->detail == XCB_BUTTON_INDEX_1) { */
-	/* 	state.painting = 0; */
-	/* } else if (ev->detail == XCB_BUTTON_INDEX_2) { */
-	/* 	drag_end(ev->event_x, ev->event_y); */
-	/* } */
+	switch (ev->detail) {
+	case XCB_BUTTON_INDEX_1:
+		drawing.active = false;
+		break;
+	case XCB_BUTTON_INDEX_2:
+		dragging.active = false;
+		break;
+	}
 }
 
 static void
@@ -347,6 +327,9 @@ main(int argc, char **argv)
 	}
 
 	xwininit();
+
+	drawing.color = 0xff00f3;
+	drawing.brush_size = 10;
 
 	pizarra = pizarra_new(conn, win);
 
