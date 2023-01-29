@@ -333,20 +333,15 @@ h_mapping_notify(xcb_mapping_notify_event_t *ev)
 int
 main(int argc, char **argv)
 {
-	enum chalkboard_direction cdir;
 	xcb_generic_event_t *ev;
 
-	cdir = DIRECTION_HORIZONTAL;
-
 	while (++argv, --argc > 0) {
-		if (!strcmp(*argv, "-horizontal")) cdir = DIRECTION_HORIZONTAL;
-		else if (!strcmp(*argv, "-vertical")) cdir = DIRECTION_VERTICAL;
-		else die("invalid option %s", *argv); break;
+		die("invalid option %s", *argv); break;
 	}
 
 	xwininit();
 
-	chalkboard = chalkboard_new(conn, win, cdir);
+	chalkboard = chalkboard_new(conn, win);
 
 	while ((ev = xcb_wait_for_event(conn))) {
 		switch (ev->response_type & ~0x80) {
