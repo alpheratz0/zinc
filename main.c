@@ -273,7 +273,7 @@ h_motion_notify(xcb_motion_notify_event_t *ev)
 		dragging.x = ev->event_x;
 		dragging.y = ev->event_y;
 
-		chalkboard_move(chalkboard, dx, dy);
+		chalkboard_move(conn, win, chalkboard, dx, dy);
 		chalkboard_render(conn, win, chalkboard);
 	}
 
@@ -306,7 +306,7 @@ h_button_release(xcb_button_release_event_t *ev)
 static void
 h_configure_notify(xcb_configure_notify_event_t *ev)
 {
-	chalkboard_set_viewport(chalkboard, ev->width, ev->height);
+	chalkboard_set_viewport(conn, win, chalkboard, ev->width, ev->height);
 }
 
 static void

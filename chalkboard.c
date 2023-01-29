@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <string.h>
 #include <assert.h>
 #include <xcb/xcb.h>
@@ -147,7 +148,7 @@ static struct chunk *
 __chunk_first(const struct chunk *c)
 {
 	struct chunk *first;
-	first = c;
+	first = (struct chunk *)c;
 	while (first->previous)
 		first = first->previous;
 	return first;
@@ -157,7 +158,7 @@ static struct chunk *
 __chunk_last(const struct chunk *c)
 {
 	struct chunk *last;
-	last = c;
+	last = (struct chunk *)c;
 	while (last->next)
 		last = last->next;
 	return last;
@@ -212,18 +213,61 @@ chalkboard_new(xcb_connection_t *conn, xcb_window_t win, enum chalkboard_directi
 	return c;
 }
 
-extern void
-chalkboard_move(struct chalkboard *c, int offx, int offy)
+static void
+chalkboard_regenerate_chunks(xcb_connection_t *conn, xcb_window_t win, struct chalkboard *c)
 {
-	c->pos.x += offx;
-	c->pos.y += offy;
+	struct chunk *first, *last;
+	int min, max, vmin, vmax;
+	bool done;
+
+start:
+	done = true;
+	first = __chunk_first(c->root);
+	last = __chunk_last(c->root);
+
+	if (c->dir == DIRECTION_HORIZONTAL) {
+		min = first->index * first->width;
+		max = (last->index + 1) * last->width;
+		vmin = c->pos.x;
+		vmax = vmin + c->viewport_width;
+	} else {
+		min = first->index * first->height;
+		max = (last->index + 1) * last->height;
+		vmin = c->pos.y;
+		vmax = vmin + c->viewport_height;
+	}
+
+	if (vmin < min) {
+		done = false;
+		__chunk_prepend(conn, win, first, first->width, first->height);
+	}
+
+	if (vmax > max) {
+		done = false;
+		__chunk_apend(conn, win, last, last->width, last->height);
+	}
+
+	if (!done) {
+		goto start;
+	}
 }
 
 extern void
-chalkboard_set_viewport(struct chalkboard *c, int vw, int vh)
+chalkboard_move(xcb_connection_t *conn, xcb_window_t win, struct chalkboard *c, int offx, int offy)
+{
+	c->pos.x += offx;
+	c->pos.y += offy;
+
+	chalkboard_regenerate_chunks(conn, win, c);
+}
+
+extern void
+chalkboard_set_viewport(xcb_connection_t *conn, xcb_window_t win, struct chalkboard *c, int vw, int vh)
 {
 	c->viewport_width = vw;
 	c->viewport_height = vh;
+
+	chalkboard_regenerate_chunks(conn, win, c);
 
 	/* TODO: update position to re-center */
 	/*       ...                          */
