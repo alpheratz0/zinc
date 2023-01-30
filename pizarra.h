@@ -3,22 +3,22 @@
 #include <xcb/xcb.h>
 #include <xcb/xproto.h>
 
-struct pizarra;
+typedef struct Pizarra Pizarra;
 
-extern struct pizarra *
+extern Pizarra *
 pizarra_new(xcb_connection_t *conn, xcb_window_t win);
 
 extern void
-pizarra_render(struct pizarra *piz);
+pizarra_render(Pizarra *piz);
 
 extern void
-pizarra_camera_move_relative(struct pizarra *piz, int offx, int offy);
+pizarra_camera_move_relative(Pizarra *piz, int offx, int offy);
 
 extern void
-pizarra_set_viewport(struct pizarra *piz, int vw, int vh);
+pizarra_set_viewport(Pizarra *piz, int vw, int vh);
 
 extern void
-pizarra_set_pixel(struct pizarra *piz, int x, int y, uint32_t color);
+pizarra_set_pixel(Pizarra *piz, int x, int y, uint32_t color);
 
 extern int
-pizarra_get_pixel(struct pizarra *piz, int x, int y, uint32_t *color);
+pizarra_get_pixel(Pizarra *piz, int x, int y, uint32_t *color);

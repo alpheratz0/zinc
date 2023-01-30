@@ -13,21 +13,19 @@
 #include "utils.h"
 #include "pizarra.h"
 
-struct dragging_info {
+typedef struct {
 	bool active;
 	int x;
 	int y;
-};
+} DragInfo;
 
-struct drawing_info {
+typedef struct {
 	bool active;
 	uint32_t color;
 	int brush_size;
-};
+} DrawInfo;
 
-static struct drawing_info drawing;
-static struct dragging_info dragging;
-static struct pizarra *pizarra;
+static Pizarra *pizarra;
 static xcb_connection_t *conn;
 static xcb_screen_t *scr;
 static xcb_window_t win;
@@ -35,6 +33,8 @@ static int width, height;
 static xcb_key_symbols_t *ksyms;
 static xcb_cursor_context_t *cctx;
 static xcb_cursor_t cursor_hand, cursor_arrow;
+static DrawInfo drawinfo;
+static DragInfo draginfo;
 
 static xcb_atom_t
 get_x11_atom(const char *name)
@@ -184,22 +184,22 @@ h_key_press(xcb_key_press_event_t *ev)
 
 	switch (key) {
 	case XKB_KEY_w:
-		drawing.color = 0xffffff;
+		drawinfo.color = 0xffffff;
 		break;
 	case XKB_KEY_r:
-		drawing.color = 0xff0000;
+		drawinfo.color = 0xff0000;
 		break;
 	case XKB_KEY_g:
-		drawing.color = 0x00ff00;
+		drawinfo.color = 0x00ff00;
 		break;
 	case XKB_KEY_b:
-		drawing.color = 0x0000ff;
+		drawinfo.color = 0x0000ff;
 		break;
 	case XKB_KEY_y:
-		drawing.color = 0xffff00;
+		drawinfo.color = 0xffff00;
 		break;
 	case XKB_KEY_o:
-		drawing.color = 0xff5100;
+		drawinfo.color = 0xff5100;
 		break;
 	}
 }
@@ -210,6 +210,8 @@ h_key_release(xcb_key_release_event_t *ev)
 	xcb_keysym_t key;
 
 	key = xcb_key_symbols_get_keysym(ksyms, ev->detail, 0);
+
+	(void) key;
 }
 
 static inline uint8_t
@@ -255,17 +257,17 @@ h_button_press(xcb_button_press_event_t *ev)
 {
 	switch (ev->detail) {
 	case XCB_BUTTON_INDEX_1:
-		if (!dragging.active) {
-			drawing.active = true;
-			addpoint(ev->event_x, ev->event_y, drawing.color, drawing.brush_size);
+		if (!draginfo.active) {
+			drawinfo.active = true;
+			addpoint(ev->event_x, ev->event_y, drawinfo.color, drawinfo.brush_size);
 			pizarra_render(pizarra);
 		}
 		break;
 	case XCB_BUTTON_INDEX_2:
-		if (!drawing.active) {
-			dragging.active = true;
-			dragging.x = ev->event_x;
-			dragging.y = ev->event_y;
+		if (!drawinfo.active) {
+			draginfo.active = true;
+			draginfo.x = ev->event_x;
+			draginfo.y = ev->event_y;
 		}
 		break;
 	}
@@ -276,19 +278,19 @@ h_motion_notify(xcb_motion_notify_event_t *ev)
 {
 	int dx, dy;
 
-	if (dragging.active) {
-		dx = dragging.x - ev->event_x;
-		dy = dragging.y - ev->event_y;
+	if (draginfo.active) {
+		dx = draginfo.x - ev->event_x;
+		dy = draginfo.y - ev->event_y;
 
-		dragging.x = ev->event_x;
-		dragging.y = ev->event_y;
+		draginfo.x = ev->event_x;
+		draginfo.y = ev->event_y;
 
 		pizarra_camera_move_relative(pizarra, dx, dy);
 		pizarra_render(pizarra);
 	}
 
-	if (drawing.active) {
-		addpoint(ev->event_x, ev->event_y, drawing.color, drawing.brush_size);
+	if (drawinfo.active) {
+		addpoint(ev->event_x, ev->event_y, drawinfo.color, drawinfo.brush_size);
 		pizarra_render(pizarra);
 	}
 }
@@ -298,10 +300,10 @@ h_button_release(xcb_button_release_event_t *ev)
 {
 	switch (ev->detail) {
 	case XCB_BUTTON_INDEX_1:
-		drawing.active = false;
+		drawinfo.active = false;
 		break;
 	case XCB_BUTTON_INDEX_2:
-		dragging.active = false;
+		draginfo.active = false;
 		break;
 	}
 }
@@ -350,8 +352,8 @@ main(int argc, char **argv)
 
 	xwininit();
 
-	drawing.color = 0xffffff;
-	drawing.brush_size = 5;
+	drawinfo.color = 0xffffff;
+	drawinfo.brush_size = 5;
 
 	pizarra = pizarra_new(conn, win);
 

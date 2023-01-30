@@ -15,12 +15,12 @@
 #include "pizarra.h"
 #include "utils.h"
 
-struct vec2 {
+typedef struct {
 	int x;
 	int y;
-};
+} Vector2;
 
-struct chunk {
+typedef struct Chunk {
 	int index;
 	int width;
 	int height;
@@ -44,19 +44,18 @@ struct chunk {
 	/* int min_visible_index; */
 	/* int max_visible_index; */
 
-	struct chunk *next;
-	struct chunk *previous;
-};
+	struct Chunk *next;
+	struct Chunk *previous;
+} Chunk;
 
-struct pizarra {
-	struct vec2 pos;
+struct Pizarra {
+	Vector2 pos;
 	int viewport_height;
 	int viewport_width;
-	struct chunk *root;
+	Chunk *root;
 	xcb_connection_t *conn;
 	xcb_window_t win;
 };
-
 
 static int
 __x_check_mit_shm_extension(xcb_connection_t *conn)
@@ -87,30 +86,30 @@ __x_check_mit_shm_extension(xcb_connection_t *conn)
 	return 0;
 }
 
-static struct chunk *
-__chunk_first(const struct chunk *c)
+static Chunk *
+__chunk_first(const Chunk *c)
 {
-	struct chunk *first;
-	first = (struct chunk *)c;
+	Chunk *first;
+	first = (Chunk *)c;
 	while (first->previous)
 		first = first->previous;
 	return first;
 }
 
-static struct chunk *
-__chunk_last(const struct chunk *c)
+static Chunk *
+__chunk_last(const Chunk *c)
 {
-	struct chunk *last;
-	last = (struct chunk *)c;
+	Chunk *last;
+	last = (Chunk *)c;
 	while (last->next)
 		last = last->next;
 	return last;
 }
 
 static void
-__pizarra_get_rect(const struct pizarra *piz, int *x, int *y, int *w, int *h)
+__pizarra_get_rect(const Pizarra *piz, int *x, int *y, int *w, int *h)
 {
-	const struct chunk *first, *last;
+	const Chunk *first, *last;
 
 	first = __chunk_first(piz->root);
 	last = __chunk_last(piz->root);
@@ -122,7 +121,7 @@ __pizarra_get_rect(const struct pizarra *piz, int *x, int *y, int *w, int *h)
 }
 
 static void
-__pizarra_get_viewport_rect(const struct pizarra *piz, int *x, int *y, int *w, int *h)
+__pizarra_get_viewport_rect(const Pizarra *piz, int *x, int *y, int *w, int *h)
 {
 	*x = piz->pos.x;
 	*y = piz->pos.y;
@@ -131,7 +130,7 @@ __pizarra_get_viewport_rect(const struct pizarra *piz, int *x, int *y, int *w, i
 }
 
 static void
-__chunk_get_rect(const struct chunk *c, int *x, int *y, int *w, int *h)
+__chunk_get_rect(const Chunk *c, int *x, int *y, int *w, int *h)
 {
 	*x = 0;
 	*y = c->index * c->height;
@@ -139,10 +138,10 @@ __chunk_get_rect(const struct chunk *c, int *x, int *y, int *w, int *h)
 	*h = c->height;
 }
 
-static struct chunk *
+static Chunk *
 __chunk_new(xcb_connection_t *conn, xcb_window_t win, int w, int h)
 {
-	struct chunk *c;
+	Chunk *c;
 	size_t szpx;
 	xcb_screen_t *scr;
 	uint8_t depth;
@@ -155,7 +154,7 @@ __chunk_new(xcb_connection_t *conn, xcb_window_t win, int w, int h)
 	assert(scr != NULL);
 
 	szpx = w * h * sizeof(uint32_t);
-	c = calloc(1, sizeof(struct chunk));
+	c = calloc(1, sizeof(Chunk));
 	depth = scr->root_depth;
 
 	c->width = w;
@@ -203,9 +202,9 @@ __chunk_new(xcb_connection_t *conn, xcb_window_t win, int w, int h)
 }
 
 static void
-__chunk_prepend(xcb_connection_t *conn, xcb_window_t win, struct chunk *c, int width, int height)
+__chunk_prepend(xcb_connection_t *conn, xcb_window_t win, Chunk *c, int width, int height)
 {
-	struct chunk *first;
+	Chunk *first;
 	first = __chunk_first(c);
 	first->previous = __chunk_new(conn, win, width, height);
 	first->previous->next = first;
@@ -213,19 +212,19 @@ __chunk_prepend(xcb_connection_t *conn, xcb_window_t win, struct chunk *c, int w
 }
 
 static void
-__chunk_append(xcb_connection_t *conn, xcb_window_t win, struct chunk *c, int width, int height)
+__chunk_append(xcb_connection_t *conn, xcb_window_t win, Chunk *c, int width, int height)
 {
-	struct chunk *last;
+	Chunk *last;
 	last = __chunk_last(c);
 	last->next = __chunk_new(conn, win, width, height);
 	last->next->previous = last;
 	last->next->index = last->index + 1;
 }
 
-extern struct pizarra *
+extern Pizarra *
 pizarra_new(xcb_connection_t *conn, xcb_window_t win)
 {
-	struct pizarra *piz;
+	Pizarra *piz;
 	xcb_screen_t *scr;
 	int width, height;
 
@@ -237,7 +236,7 @@ pizarra_new(xcb_connection_t *conn, xcb_window_t win)
 	width = scr->width_in_pixels;
 	height = scr->height_in_pixels;
 
-	piz = calloc(1, sizeof(struct pizarra));
+	piz = calloc(1, sizeof(Pizarra));
 
 	piz->conn = conn;
 	piz->win = win;
@@ -251,7 +250,7 @@ pizarra_new(xcb_connection_t *conn, xcb_window_t win)
 }
 
 static void
-pizarra_regenerate_chunks(struct pizarra *piz)
+pizarra_regenerate_chunks(Pizarra *piz)
 {
 	int x, y, w, h;
 	int cx, cy, cw, ch;
@@ -279,7 +278,7 @@ regenerate:
 }
 
 extern void
-pizarra_camera_move_relative(struct pizarra *piz, int offx, int offy)
+pizarra_camera_move_relative(Pizarra *piz, int offx, int offy)
 {
 	piz->pos.x += offx;
 	piz->pos.y += offy;
@@ -294,7 +293,7 @@ pizarra_camera_move_relative(struct pizarra *piz, int offx, int offy)
 }
 
 extern void
-pizarra_set_viewport(struct pizarra *piz, int vw, int vh)
+pizarra_set_viewport(Pizarra *piz, int vw, int vh)
 {
 	piz->viewport_width = vw;
 	piz->viewport_height = vh;
@@ -309,11 +308,11 @@ pizarra_set_viewport(struct pizarra *piz, int vw, int vh)
 }
 
 extern void
-pizarra_render(struct pizarra *piz)
+pizarra_render(Pizarra *piz)
 {
 	int x, y, w, h;
 	int cx, cy, cw, ch;
-	struct chunk *chunk;
+	Chunk *chunk;
 
 	__pizarra_get_viewport_rect(piz, &x, &y, &w, &h);
 
@@ -339,10 +338,10 @@ pizarra_render(struct pizarra *piz)
 }
 
 extern void
-pizarra_set_pixel(struct pizarra *piz, int x, int y, uint32_t color)
+pizarra_set_pixel(Pizarra *piz, int x, int y, uint32_t color)
 {
 	int chunkx, chunky;
-	struct chunk *chunk;
+	Chunk *chunk;
 
 	x += piz->pos.x;
 	y += piz->pos.y;
@@ -360,10 +359,10 @@ pizarra_set_pixel(struct pizarra *piz, int x, int y, uint32_t color)
 }
 
 extern int
-pizarra_get_pixel(struct pizarra *piz, int x, int y, uint32_t *color)
+pizarra_get_pixel(Pizarra *piz, int x, int y, uint32_t *color)
 {
 	int chunkx, chunky;
-	struct chunk *chunk;
+	Chunk *chunk;
 
 	x += piz->pos.x;
 	y += piz->pos.y;
