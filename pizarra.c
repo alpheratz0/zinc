@@ -281,6 +281,12 @@ pizarra_camera_move_relative(struct pizarra *piz, int offx, int offy)
 	piz->pos.y += offy;
 
 	pizarra_regenerate_chunks(piz);
+
+	if (piz->pos.x > piz->root->width)
+		piz->pos.x = piz->root->width;
+
+	if (piz->pos.x < -piz->root->width)
+		piz->pos.x = -piz->root->width;
 }
 
 extern void
@@ -293,6 +299,12 @@ pizarra_set_viewport(struct pizarra *piz, int vw, int vh)
 
 	/* TODO: update position to re-center */
 	/*       ...                          */
+
+	if (piz->pos.x > piz->root->width)
+		piz->pos.x = piz->root->width;
+
+	if (piz->pos.x < -piz->root->width)
+		piz->pos.x = -piz->root->width;
 }
 
 extern void
