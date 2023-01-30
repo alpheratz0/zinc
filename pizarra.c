@@ -40,6 +40,10 @@ struct chunk {
 		xcb_image_t *image;
 	} x;
 
+	/* TODO */
+	/* int min_visible_index; */
+	/* int max_visible_index; */
+
 	struct chunk *next;
 	struct chunk *previous;
 };
