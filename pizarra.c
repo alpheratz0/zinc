@@ -289,8 +289,8 @@ pizarra_camera_move_relative(struct pizarra *piz, int offx, int offy)
 	if (piz->pos.x > piz->root->width)
 		piz->pos.x = piz->root->width;
 
-	if (piz->pos.x < -piz->root->width)
-		piz->pos.x = -piz->root->width;
+	if (piz->pos.x < -piz->viewport_width)
+		piz->pos.x = -piz->viewport_width;
 }
 
 extern void
@@ -307,8 +307,8 @@ pizarra_set_viewport(struct pizarra *piz, int vw, int vh)
 	if (piz->pos.x > piz->root->width)
 		piz->pos.x = piz->root->width;
 
-	if (piz->pos.x < -piz->root->width)
-		piz->pos.x = -piz->root->width;
+	if (piz->pos.x < -piz->viewport_width)
+		piz->pos.x = -piz->viewport_width;
 }
 
 extern void
