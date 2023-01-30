@@ -99,7 +99,7 @@ xwininit(void)
 		width, height, 0, XCB_WINDOW_CLASS_INPUT_OUTPUT,
 		scr->root_visual, XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK,
 		(const xcb_create_window_value_list_t []) {{
-			.background_pixel = 0x333333,
+			.background_pixel = 0x0e0e0e,
 			.event_mask = XCB_EVENT_MASK_EXPOSURE |
 			              XCB_EVENT_MASK_KEY_PRESS |
 			              XCB_EVENT_MASK_KEY_RELEASE |
