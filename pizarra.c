@@ -316,8 +316,13 @@ pizarra_render(struct pizarra *piz)
 
 	__pizarra_get_viewport_rect(piz, &x, &y, &w, &h);
 
-	// FIXME: clear non chunk areas
-	xcb_clear_area(piz->conn, 0, piz->win, 0, 0, piz->viewport_width, piz->viewport_height);
+	if (piz->pos.x < 0)
+		xcb_clear_area(piz->conn, 0, piz->win, 0, 0, -piz->pos.x, piz->viewport_height);
+
+	if (piz->root->width - piz->pos.x < piz->viewport_width)
+		xcb_clear_area(piz->conn, 0, piz->win, piz->root->width - piz->pos.x,
+				0, piz->viewport_width - (piz->root->width - piz->pos.x),
+				piz->viewport_height);
 
 	for (chunk = __chunk_first(piz->root); chunk; chunk = chunk->next) {
 		__chunk_get_rect(chunk, &cx, &cy, &cw, &ch);
