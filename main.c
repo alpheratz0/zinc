@@ -8,6 +8,7 @@
 #include <stddef.h>
 #include <string.h>
 #include <stdbool.h>
+#include <xkbcommon/xkbcommon-keysyms.h>
 
 #include "utils.h"
 #include "pizarra.h"
@@ -180,6 +181,24 @@ h_key_press(xcb_key_press_event_t *ev)
 	xcb_keysym_t key;
 
 	key = xcb_key_symbols_get_keysym(ksyms, ev->detail, 0);
+
+	switch (key) {
+	case XKB_KEY_w:
+		drawing.color = 0xffffff;
+		break;
+	case XKB_KEY_r:
+		drawing.color = 0xff0000;
+		break;
+	case XKB_KEY_g:
+		drawing.color = 0x00ff00;
+		break;
+	case XKB_KEY_b:
+		drawing.color = 0x0000ff;
+		break;
+	case XKB_KEY_y:
+		drawing.color = 0xffff00;
+		break;
+	}
 }
 
 static void
