@@ -301,9 +301,6 @@ pizarra_set_viewport(struct pizarra *piz, int vw, int vh)
 
 	pizarra_regenerate_chunks(piz);
 
-	/* TODO: update position to re-center */
-	/*       ...                          */
-
 	if (piz->pos.x > piz->root->width)
 		piz->pos.x = piz->root->width;
 
