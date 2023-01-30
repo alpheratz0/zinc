@@ -198,6 +198,9 @@ h_key_press(xcb_key_press_event_t *ev)
 	case XKB_KEY_y:
 		drawing.color = 0xffff00;
 		break;
+	case XKB_KEY_o:
+		drawing.color = 0xff5100;
+		break;
 	}
 }
 
