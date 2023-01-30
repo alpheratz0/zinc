@@ -275,7 +275,7 @@ regenerate:
 }
 
 extern void
-pizarra_move(struct pizarra *piz, int offx, int offy)
+pizarra_camera_move_relative(struct pizarra *piz, int offx, int offy)
 {
 	piz->pos.x += offx;
 	piz->pos.y += offy;

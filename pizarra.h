@@ -12,7 +12,7 @@ extern void
 pizarra_render(struct pizarra *piz);
 
 extern void
-pizarra_move(struct pizarra *piz, int offx, int offy);
+pizarra_camera_move_relative(struct pizarra *piz, int offx, int offy);
 
 extern void
 pizarra_set_viewport(struct pizarra *piz, int vw, int vh);

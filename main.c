@@ -261,7 +261,7 @@ h_motion_notify(xcb_motion_notify_event_t *ev)
 		dragging.x = ev->event_x;
 		dragging.y = ev->event_y;
 
-		pizarra_move(pizarra, dx, dy);
+		pizarra_camera_move_relative(pizarra, dx, dy);
 		pizarra_render(pizarra);
 	}
 
