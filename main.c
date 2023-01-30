@@ -347,8 +347,8 @@ main(int argc, char **argv)
 
 	xwininit();
 
-	drawing.color = 0xff00f3;
-	drawing.brush_size = 10;
+	drawing.color = 0xffffff;
+	drawing.brush_size = 5;
 
 	pizarra = pizarra_new(conn, win);
 
