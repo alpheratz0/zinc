@@ -129,12 +129,12 @@ xwininit(void)
 
 	_NET_WM_NAME = get_x11_atom("_NET_WM_NAME");
 	UTF8_STRING = get_x11_atom("UTF8_STRING");
-	wm_name = "xpizarra";
+	wm_name = "xyne";
 
 	xcb_change_property(conn, XCB_PROP_MODE_REPLACE, win,
 		_NET_WM_NAME, UTF8_STRING, 8, strlen(wm_name), wm_name);
 
-	wm_class = "xpizarra\0xpizarra\0";
+	wm_class = "xyne\0xyne\0";
 	xcb_change_property(conn, XCB_PROP_MODE_REPLACE, win, XCB_ATOM_WM_CLASS,
 		XCB_ATOM_STRING, 8, strlen(wm_class), wm_class);
 
@@ -341,14 +341,14 @@ h_mapping_notify(xcb_mapping_notify_event_t *ev)
 static void
 usage(void)
 {
-	puts("usage: xpizarra [-hv]");
+	puts("usage: xyne [-hv]");
 	exit(0);
 }
 
 static void
 version(void)
 {
-	puts("xpizarra version "VERSION);
+	puts("xyne version "VERSION);
 	exit(0);
 }
 
