@@ -5,7 +5,7 @@ include config.mk
 
 all: xyne
 
-xyne.o: xyne.c
+xyne.o:     xyne.c
 pizarra.o:  pizarra.c
 utils.o:    utils.c
 
