@@ -346,8 +346,13 @@ pizarra_render(Pizarra *piz)
 
 		if (x < cx + cw && y < cy + ch
 				&& x + w > cx && y + h > cy) {
-			xcb_copy_area(piz->conn, chunk->x.shm.pixmap, piz->win,
-					chunk->gc, 0, 0, cx - piz->pos.x, cy - piz->pos.y, cw, ch);
+			if (chunk->shm) {
+				xcb_copy_area(piz->conn, chunk->x.shm.pixmap, piz->win,
+						chunk->gc, 0, 0, cx - piz->pos.x, cy - piz->pos.y, cw, ch);
+			} else {
+				xcb_image_put(piz->conn, piz->win, chunk->gc,
+						chunk->x.image, cx - piz->pos.x, cy - piz->pos.y, 0);
+			}
 		}
 	}
 
