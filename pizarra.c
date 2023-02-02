@@ -57,10 +57,6 @@ typedef struct Chunk {
 		xcb_image_t *image;
 	} x;
 
-	/* TODO */
-	/* int min_visible_index; */
-	/* int max_visible_index; */
-
 	struct Chunk *next;
 	struct Chunk *previous;
 } Chunk;
@@ -69,7 +65,13 @@ struct Pizarra {
 	Vector2 pos;
 	int viewport_height;
 	int viewport_width;
+
 	Chunk *root;
+
+	/* TODO */
+	/* int min_visible_index; */
+	/* int max_visible_index; */
+
 	xcb_connection_t *conn;
 	xcb_window_t win;
 };
