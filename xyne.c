@@ -286,6 +286,9 @@ h_button_press(xcb_button_press_event_t *ev)
 			draginfo.active = true;
 			draginfo.x = ev->event_x;
 			draginfo.y = ev->event_y;
+
+			xcb_change_window_attributes(conn, win, XCB_CW_CURSOR, &cursor_hand);
+			xcb_flush(conn);
 		}
 		break;
 	}
@@ -322,6 +325,8 @@ h_button_release(xcb_button_release_event_t *ev)
 		break;
 	case XCB_BUTTON_INDEX_2:
 		draginfo.active = false;
+		xcb_change_window_attributes(conn, win, XCB_CW_CURSOR, &cursor_arrow);
+		xcb_flush(conn);
 		break;
 	}
 }
