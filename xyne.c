@@ -53,6 +53,7 @@ static xcb_cursor_context_t *cctx;
 static xcb_cursor_t cursor_hand, cursor_arrow;
 static DrawInfo drawinfo;
 static DragInfo draginfo;
+static bool should_close;
 
 static xcb_atom_t
 get_x11_atom(const char *name)
@@ -180,10 +181,8 @@ h_client_message(xcb_client_message_event_t *ev)
 
 	/* check if the wm sent a delete window message */
 	/* https://www.x.org/docs/ICCCM/icccm.pdf */
-	if (ev->data.data32[0] == WM_DELETE_WINDOW) {
-		xwindestroy();
-		exit(0);
-	}
+	if (ev->data.data32[0] == WM_DELETE_WINDOW)
+		should_close = true;
 }
 
 static void
@@ -380,7 +379,7 @@ main(int argc, char **argv)
 
 	pizarra = pizarra_new(conn, win);
 
-	while ((ev = xcb_wait_for_event(conn))) {
+	while (!should_close && (ev = xcb_wait_for_event(conn))) {
 		switch (ev->response_type & ~0x80) {
 			case XCB_CLIENT_MESSAGE:     h_client_message((void *)(ev)); break;
 			case XCB_EXPOSE:             h_expose((void *)(ev)); break;
@@ -396,7 +395,7 @@ main(int argc, char **argv)
 		free(ev);
 	}
 
-	/* pizarra_destroy(conn, win, pizarra); */
+	pizarra_destroy(pizarra);
 	xwindestroy();
 
 	return 0;

@@ -39,3 +39,6 @@ pizarra_set_pixel(Pizarra *piz, int x, int y, uint32_t color);
 
 extern int
 pizarra_get_pixel(Pizarra *piz, int x, int y, uint32_t *color);
+
+extern void
+pizarra_destroy(Pizarra *piz);

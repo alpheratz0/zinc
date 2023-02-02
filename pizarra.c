@@ -404,3 +404,32 @@ pizarra_get_pixel(Pizarra *piz, int x, int y, uint32_t *color)
 
 	return 0;
 }
+
+static void
+__chunk_destroy(xcb_connection_t *conn, Chunk *chunk)
+{
+	xcb_free_gc(conn, chunk->gc);
+
+	if (chunk->shm) {
+		shmctl(chunk->x.shm.id, IPC_RMID, NULL);
+		xcb_shm_detach(conn, chunk->x.shm.seg);
+		shmdt(chunk->px);
+		xcb_free_pixmap(conn, chunk->x.shm.pixmap);
+	} else {
+		xcb_image_destroy(chunk->x.image);
+	}
+
+	free(chunk);
+}
+
+extern void
+pizarra_destroy(Pizarra *piz)
+{
+	Chunk *chunk, *next;
+	for (chunk = __chunk_first(piz->root); chunk; ) {
+		next = chunk->next;
+		__chunk_destroy(piz->conn, chunk);
+		chunk = next;
+	}
+	free(piz);
+}
