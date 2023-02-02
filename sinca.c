@@ -131,12 +131,12 @@ xwininit(void)
 
 	_NET_WM_NAME = get_x11_atom("_NET_WM_NAME");
 	UTF8_STRING = get_x11_atom("UTF8_STRING");
-	wm_name = "xyne";
+	wm_name = "sinca";
 
 	xcb_change_property(conn, XCB_PROP_MODE_REPLACE, win,
 		_NET_WM_NAME, UTF8_STRING, 8, strlen(wm_name), wm_name);
 
-	wm_class = "xyne\0xyne\0";
+	wm_class = "sinca\0sinca\0";
 	xcb_change_property(conn, XCB_PROP_MODE_REPLACE, win, XCB_ATOM_WM_CLASS,
 		XCB_ATOM_STRING, 8, strlen(wm_class), wm_class);
 
@@ -343,14 +343,14 @@ h_mapping_notify(xcb_mapping_notify_event_t *ev)
 static void
 usage(void)
 {
-	puts("usage: xyne [-hv]");
+	puts("usage: sinca [-hv]");
 	exit(0);
 }
 
 static void
 version(void)
 {
-	puts("xyne version "VERSION);
+	puts("sinca version "VERSION);
 	exit(0);
 }
 

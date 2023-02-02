@@ -26,7 +26,7 @@ die(const char *fmt, ...)
 {
 	va_list args;
 
-	fputs("xyne: ", stderr);
+	fputs("sinca: ", stderr);
 	va_start(args, fmt);
 	vfprintf(stderr, fmt, args);
 	va_end(args);
