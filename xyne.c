@@ -200,24 +200,13 @@ h_key_press(xcb_key_press_event_t *ev)
 	key = xcb_key_symbols_get_keysym(ksyms, ev->detail, 0);
 
 	switch (key) {
-	case XKB_KEY_w:
-		drawinfo.color = 0xffffff;
-		break;
-	case XKB_KEY_r:
-		drawinfo.color = 0xff0000;
-		break;
-	case XKB_KEY_g:
-		drawinfo.color = 0x00ff00;
-		break;
-	case XKB_KEY_b:
-		drawinfo.color = 0x0000ff;
-		break;
-	case XKB_KEY_y:
-		drawinfo.color = 0xffff00;
-		break;
-	case XKB_KEY_o:
-		drawinfo.color = 0xff5100;
-		break;
+	case XKB_KEY_q: drawinfo.color = 0xff0000; break; /* Red */
+	case XKB_KEY_w: drawinfo.color = 0x00ff00; break; /* Green */
+	case XKB_KEY_e: drawinfo.color = 0x0000ff; break; /* Blue */
+	case XKB_KEY_a: drawinfo.color = 0xffffff; break; /* White */
+	case XKB_KEY_s: drawinfo.color = 0x000000; break; /* Black */
+	case XKB_KEY_z: drawinfo.color = 0xff5100; break; /* Orange */
+	case XKB_KEY_x: drawinfo.color = 0xffff00; break; /* Yellow */
 	}
 }
 
