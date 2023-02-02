@@ -105,6 +105,14 @@ __x_check_mit_shm_extension(xcb_connection_t *conn)
 	return 0;
 }
 
+
+static bool __attribute__((unused))
+__chunk_is_visible(const Chunk *c) /* TODO: implement */
+{
+	(void) c;
+	return false;
+}
+
 static Chunk *
 __chunk_first(const Chunk *c)
 {
