@@ -47,7 +47,6 @@ static Pizarra *pizarra;
 static xcb_connection_t *conn;
 static xcb_screen_t *scr;
 static xcb_window_t win;
-static int width, height;
 static xcb_key_symbols_t *ksyms;
 static xcb_cursor_context_t *cctx;
 static xcb_cursor_t cursor_hand, cursor_arrow;
@@ -107,7 +106,6 @@ xwininit(void)
 	if (xcb_cursor_context_new(conn, scr, &cctx) != 0)
 		die("can't create cursor context");
 
-	width = 800; height = 600;
 	cursor_hand = xcb_cursor_load_cursor(cctx, "fleur");
 	cursor_arrow = xcb_cursor_load_cursor(cctx, "left_ptr");
 	ksyms = xcb_key_symbols_alloc(conn);
@@ -115,7 +113,7 @@ xwininit(void)
 
 	xcb_create_window_aux(
 		conn, scr->root_depth, win, scr->root, 0, 0,
-		width, height, 0, XCB_WINDOW_CLASS_INPUT_OUTPUT,
+		800, 600, 0, XCB_WINDOW_CLASS_INPUT_OUTPUT,
 		scr->root_visual, XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK,
 		(const xcb_create_window_value_list_t []) {{
 			.background_pixel = 0x0e0e0e,
