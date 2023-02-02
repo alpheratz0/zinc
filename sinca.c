@@ -360,8 +360,8 @@ main(int argc, char **argv)
 	while (++argv, --argc > 0) {
 		if ((*argv)[0] == '-' && (*argv)[1] != '\0' && (*argv)[2] == '\0') {
 			switch ((*argv)[1]) {
-				case 'h': usage(); break;
-				case 'v': version(); break;
+			case 'h': usage(); break;
+			case 'v': version(); break;
 			}
 		}
 		die("invalid option %s", *argv); break;
@@ -376,15 +376,15 @@ main(int argc, char **argv)
 
 	while (!should_close && (ev = xcb_wait_for_event(conn))) {
 		switch (ev->response_type & ~0x80) {
-			case XCB_CLIENT_MESSAGE:     h_client_message((void *)(ev)); break;
-			case XCB_EXPOSE:             h_expose((void *)(ev)); break;
-			case XCB_KEY_PRESS:          h_key_press((void *)(ev)); break;
-			case XCB_KEY_RELEASE:        h_key_release((void *)(ev)); break;
-			case XCB_BUTTON_PRESS:       h_button_press((void *)(ev)); break;
-			case XCB_MOTION_NOTIFY:      h_motion_notify((void *)(ev)); break;
-			case XCB_BUTTON_RELEASE:     h_button_release((void *)(ev)); break;
-			case XCB_CONFIGURE_NOTIFY:   h_configure_notify((void *)(ev)); break;
-			case XCB_MAPPING_NOTIFY:     h_mapping_notify((void *)(ev)); break;
+		case XCB_CLIENT_MESSAGE:     h_client_message((void *)(ev)); break;
+		case XCB_EXPOSE:             h_expose((void *)(ev)); break;
+		case XCB_KEY_PRESS:          h_key_press((void *)(ev)); break;
+		case XCB_KEY_RELEASE:        h_key_release((void *)(ev)); break;
+		case XCB_BUTTON_PRESS:       h_button_press((void *)(ev)); break;
+		case XCB_MOTION_NOTIFY:      h_motion_notify((void *)(ev)); break;
+		case XCB_BUTTON_RELEASE:     h_button_release((void *)(ev)); break;
+		case XCB_CONFIGURE_NOTIFY:   h_configure_notify((void *)(ev)); break;
+		case XCB_MAPPING_NOTIFY:     h_mapping_notify((void *)(ev)); break;
 		}
 
 		free(ev);
@@ -395,4 +395,3 @@ main(int argc, char **argv)
 
 	return 0;
 }
-
