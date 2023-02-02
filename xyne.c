@@ -279,6 +279,14 @@ h_button_press(xcb_button_press_event_t *ev)
 			xcb_flush(conn);
 		}
 		break;
+	case XCB_BUTTON_INDEX_4:
+		pizarra_camera_move_relative(pizarra, 0, -30);
+		pizarra_render(pizarra);
+		break;
+	case XCB_BUTTON_INDEX_5:
+		pizarra_camera_move_relative(pizarra, 0, 30);
+		pizarra_render(pizarra);
+		break;
 	}
 }
 
