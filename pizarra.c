@@ -103,6 +103,17 @@ __x_check_mit_shm_extension(xcb_connection_t *conn)
 	return 0;
 }
 
+static void __attribute__((unused))
+__chunk_unload(Chunk *c) /* TODO: implement */
+{
+	(void) c;
+}
+
+static void __attribute__((unused))
+__chunk_load(Chunk *c) /* TODO: implement */
+{
+	(void) c;
+}
 
 static bool __attribute__((unused))
 __chunk_is_visible(const Chunk *c) /* TODO: implement */
