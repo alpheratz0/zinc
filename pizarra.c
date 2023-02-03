@@ -369,8 +369,8 @@ pizarra_render(Pizarra *piz)
 	xcb_flush(piz->conn);
 }
 
-extern void
-pizarra_set_pixel(Pizarra *piz, int x, int y, uint32_t color)
+static inline uint32_t *
+__pizarra_get_pixel_ptr(Pizarra *piz, int x, int y)
 {
 	int chunkx, chunky;
 	Chunk *chunk;
@@ -384,32 +384,29 @@ pizarra_set_pixel(Pizarra *piz, int x, int y, uint32_t color)
 
 		if (x >= chunkx && x < chunkx + chunk->width
 				&& y >= chunky && y < chunky + chunk->height) {
-			chunk->px[(y-chunky)*chunk->width+(x-chunkx)] = color;
-			break;
+			return &chunk->px[(y-chunky)*chunk->width+(x-chunkx)];
 		}
 	}
+
+	return NULL;
+}
+
+extern void
+pizarra_set_pixel(Pizarra *piz, int x, int y, uint32_t color)
+{
+	uint32_t *px;
+	if (NULL != (px = __pizarra_get_pixel_ptr(piz, x, y)))
+		*px = color;
 }
 
 extern int
 pizarra_get_pixel(Pizarra *piz, int x, int y, uint32_t *color)
 {
-	int chunkx, chunky;
-	Chunk *chunk;
-
-	x += piz->pos.x;
-	y += piz->pos.y;
-
-	for (chunk = __chunk_first(piz->root); chunk; chunk = chunk->next) {
-		chunkx = 0;
-		chunky = chunk->index * chunk->height;
-
-		if (x >= chunkx && x < chunkx + chunk->width
-				&& y >= chunky && y < chunky + chunk->height) {
-			*color = chunk->px[(y-chunky)*chunk->width+(x-chunkx)];
-			return 1;
-		}
+	uint32_t *px;
+	if (NULL != (px = __pizarra_get_pixel_ptr(piz, x, y))) {
+		*color = *px;
+		return 1;
 	}
-
 	return 0;
 }
 
