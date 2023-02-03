@@ -24,10 +24,8 @@
 #include <xcb/shm.h>
 #include <sys/shm.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <errno.h>
 
 #include "pizarra.h"
 #include "utils.h"
