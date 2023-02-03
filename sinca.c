@@ -119,7 +119,6 @@ xwininit(void)
 			.background_pixel = 0x0e0e0e,
 			.event_mask = XCB_EVENT_MASK_EXPOSURE |
 			              XCB_EVENT_MASK_KEY_PRESS |
-			              XCB_EVENT_MASK_KEY_RELEASE |
 			              XCB_EVENT_MASK_BUTTON_PRESS |
 			              XCB_EVENT_MASK_BUTTON_RELEASE |
 			              XCB_EVENT_MASK_POINTER_MOTION |
@@ -206,16 +205,6 @@ h_key_press(xcb_key_press_event_t *ev)
 	case XKB_KEY_z: drawinfo.color = 0xff5100; break; /* Orange */
 	case XKB_KEY_x: drawinfo.color = 0xffff00; break; /* Yellow */
 	}
-}
-
-static void
-h_key_release(xcb_key_release_event_t *ev)
-{
-	xcb_keysym_t key;
-
-	key = xcb_key_symbols_get_keysym(ksyms, ev->detail, 0);
-
-	(void) key;
 }
 
 static inline uint8_t
@@ -379,7 +368,6 @@ main(int argc, char **argv)
 		case XCB_CLIENT_MESSAGE:     h_client_message((void *)(ev)); break;
 		case XCB_EXPOSE:             h_expose((void *)(ev)); break;
 		case XCB_KEY_PRESS:          h_key_press((void *)(ev)); break;
-		case XCB_KEY_RELEASE:        h_key_release((void *)(ev)); break;
 		case XCB_BUTTON_PRESS:       h_button_press((void *)(ev)); break;
 		case XCB_MOTION_NOTIFY:      h_motion_notify((void *)(ev)); break;
 		case XCB_BUTTON_RELEASE:     h_button_release((void *)(ev)); break;
