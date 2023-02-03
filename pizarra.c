@@ -304,6 +304,16 @@ regenerate:
 		goto regenerate;
 }
 
+static void
+__pizarra_keep_visible(Pizarra *piz)
+{
+	if (piz->pos.x > piz->root->width)
+		piz->pos.x = piz->root->width;
+
+	if (piz->pos.x < -piz->viewport_width)
+		piz->pos.x = -piz->viewport_width;
+}
+
 extern void
 pizarra_camera_move_relative(Pizarra *piz, int offx, int offy)
 {
@@ -311,12 +321,7 @@ pizarra_camera_move_relative(Pizarra *piz, int offx, int offy)
 	piz->pos.y += offy;
 
 	pizarra_regenerate_chunks(piz);
-
-	if (piz->pos.x > piz->root->width)
-		piz->pos.x = piz->root->width;
-
-	if (piz->pos.x < -piz->viewport_width)
-		piz->pos.x = -piz->viewport_width;
+	__pizarra_keep_visible(piz);
 }
 
 extern void
@@ -326,12 +331,7 @@ pizarra_set_viewport(Pizarra *piz, int vw, int vh)
 	piz->viewport_height = vh;
 
 	pizarra_regenerate_chunks(piz);
-
-	if (piz->pos.x > piz->root->width)
-		piz->pos.x = piz->root->width;
-
-	if (piz->pos.x < -piz->viewport_width)
-		piz->pos.x = -piz->viewport_width;
+	__pizarra_keep_visible(piz);
 }
 
 extern void
