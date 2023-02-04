@@ -103,77 +103,6 @@ __x_check_mit_shm_extension(xcb_connection_t *conn)
 	return 0;
 }
 
-static void __attribute__((unused))
-__chunk_unload(Chunk *c) /* TODO: implement */
-{
-	(void) c;
-}
-
-static void __attribute__((unused))
-__chunk_load(Chunk *c) /* TODO: implement */
-{
-	(void) c;
-}
-
-static bool __attribute__((unused))
-__chunk_is_visible(const Chunk *c) /* TODO: implement */
-{
-	(void) c;
-	return false;
-}
-
-static Chunk *
-__chunk_first(const Chunk *c)
-{
-	Chunk *first;
-	first = (Chunk *)c;
-	while (first->previous)
-		first = first->previous;
-	return first;
-}
-
-static Chunk *
-__chunk_last(const Chunk *c)
-{
-	Chunk *last;
-	last = (Chunk *)c;
-	while (last->next)
-		last = last->next;
-	return last;
-}
-
-static void
-__pizarra_get_rect(const Pizarra *piz, int *x, int *y, int *w, int *h)
-{
-	const Chunk *first, *last;
-
-	first = __chunk_first(piz->root);
-	last = __chunk_last(piz->root);
-
-	*x = 0;
-	*y = first->index * piz->root->height;
-	*w = piz->root->width;
-	*h = (last->index - first->index + 1) * piz->root->height;
-}
-
-static void
-__pizarra_get_viewport_rect(const Pizarra *piz, int *x, int *y, int *w, int *h)
-{
-	*x = piz->pos.x;
-	*y = piz->pos.y;
-	*w = piz->viewport_width;
-	*h = piz->viewport_height;
-}
-
-static void
-__chunk_get_rect(const Chunk *c, int *x, int *y, int *w, int *h)
-{
-	*x = 0;
-	*y = c->index * c->height;
-	*w = c->width;
-	*h = c->height;
-}
-
 static Chunk *
 __chunk_new(xcb_connection_t *conn, xcb_window_t win, int w, int h)
 {
@@ -237,6 +166,54 @@ __chunk_new(xcb_connection_t *conn, xcb_window_t win, int w, int h)
 	return c;
 }
 
+static void __attribute__((unused))
+__chunk_unload(Chunk *c) /* TODO: implement */
+{
+	(void) c;
+}
+
+static void __attribute__((unused))
+__chunk_load(Chunk *c) /* TODO: implement */
+{
+	(void) c;
+}
+
+static bool __attribute__((unused))
+__chunk_is_visible(const Chunk *c) /* TODO: implement */
+{
+	(void) c;
+	return false;
+}
+
+static Chunk *
+__chunk_first(const Chunk *c)
+{
+	Chunk *first;
+	first = (Chunk *)c;
+	while (first->previous)
+		first = first->previous;
+	return first;
+}
+
+static Chunk *
+__chunk_last(const Chunk *c)
+{
+	Chunk *last;
+	last = (Chunk *)c;
+	while (last->next)
+		last = last->next;
+	return last;
+}
+
+static void
+__chunk_get_rect(const Chunk *c, int *x, int *y, int *w, int *h)
+{
+	*x = 0;
+	*y = c->index * c->height;
+	*w = c->width;
+	*h = c->height;
+}
+
 static void
 __chunk_prepend(xcb_connection_t *conn, xcb_window_t win, Chunk *c, int width, int height)
 {
@@ -257,32 +234,44 @@ __chunk_append(xcb_connection_t *conn, xcb_window_t win, Chunk *c, int width, in
 	last->next->index = last->index + 1;
 }
 
-extern Pizarra *
-pizarra_new(xcb_connection_t *conn, xcb_window_t win)
+static void
+__chunk_destroy(xcb_connection_t *conn, Chunk *chunk)
 {
-	Pizarra *piz;
-	xcb_screen_t *scr;
-	int width, height;
+	xcb_free_gc(conn, chunk->gc);
 
-	assert(conn != NULL);
+	if (chunk->shm) {
+		shmctl(chunk->x.shm.id, IPC_RMID, NULL);
+		xcb_shm_detach(conn, chunk->x.shm.seg);
+		shmdt(chunk->px);
+		xcb_free_pixmap(conn, chunk->x.shm.pixmap);
+	} else {
+		xcb_image_destroy(chunk->x.image);
+	}
 
-	scr = xcb_setup_roots_iterator(xcb_get_setup(conn)).data;
-	assert(scr != NULL);
+	free(chunk);
+}
 
-	width = scr->width_in_pixels;
-	height = scr->height_in_pixels;
+static void
+__pizarra_get_rect(const Pizarra *piz, int *x, int *y, int *w, int *h)
+{
+	const Chunk *first, *last;
 
-	piz = calloc(1, sizeof(Pizarra));
+	first = __chunk_first(piz->root);
+	last = __chunk_last(piz->root);
 
-	piz->conn = conn;
-	piz->win = win;
-	piz->root = __chunk_new(conn, win, width, height);
-	piz->root->index = 0;
+	*x = 0;
+	*y = first->index * piz->root->height;
+	*w = piz->root->width;
+	*h = (last->index - first->index + 1) * piz->root->height;
+}
 
-	__chunk_prepend(conn, win, piz->root, width, height);
-	__chunk_append(conn, win, piz->root, width, height);
-
-	return piz;
+static void
+__pizarra_get_viewport_rect(const Pizarra *piz, int *x, int *y, int *w, int *h)
+{
+	*x = piz->pos.x;
+	*y = piz->pos.y;
+	*w = piz->viewport_width;
+	*h = piz->viewport_height;
 }
 
 static void
@@ -321,6 +310,56 @@ __pizarra_keep_visible(Pizarra *piz)
 
 	if (piz->pos.x < -piz->viewport_width)
 		piz->pos.x = -piz->viewport_width;
+}
+
+static inline uint32_t *
+__pizarra_get_pixel_ptr(Pizarra *piz, int x, int y)
+{
+	int chunkx, chunky;
+	Chunk *chunk;
+
+	x += piz->pos.x;
+	y += piz->pos.y;
+
+	for (chunk = __chunk_first(piz->root); chunk; chunk = chunk->next) {
+		chunkx = 0;
+		chunky = chunk->index * chunk->height;
+
+		if (x >= chunkx && x < chunkx + chunk->width
+				&& y >= chunky && y < chunky + chunk->height) {
+			return &chunk->px[(y-chunky)*chunk->width+(x-chunkx)];
+		}
+	}
+
+	return NULL;
+}
+
+extern Pizarra *
+pizarra_new(xcb_connection_t *conn, xcb_window_t win)
+{
+	Pizarra *piz;
+	xcb_screen_t *scr;
+	int width, height;
+
+	assert(conn != NULL);
+
+	scr = xcb_setup_roots_iterator(xcb_get_setup(conn)).data;
+	assert(scr != NULL);
+
+	width = scr->width_in_pixels;
+	height = scr->height_in_pixels;
+
+	piz = calloc(1, sizeof(Pizarra));
+
+	piz->conn = conn;
+	piz->win = win;
+	piz->root = __chunk_new(conn, win, width, height);
+	piz->root->index = 0;
+
+	__chunk_prepend(conn, win, piz->root, width, height);
+	__chunk_append(conn, win, piz->root, width, height);
+
+	return piz;
 }
 
 extern void
@@ -378,28 +417,6 @@ pizarra_render(Pizarra *piz)
 	xcb_flush(piz->conn);
 }
 
-static inline uint32_t *
-__pizarra_get_pixel_ptr(Pizarra *piz, int x, int y)
-{
-	int chunkx, chunky;
-	Chunk *chunk;
-
-	x += piz->pos.x;
-	y += piz->pos.y;
-
-	for (chunk = __chunk_first(piz->root); chunk; chunk = chunk->next) {
-		chunkx = 0;
-		chunky = chunk->index * chunk->height;
-
-		if (x >= chunkx && x < chunkx + chunk->width
-				&& y >= chunky && y < chunky + chunk->height) {
-			return &chunk->px[(y-chunky)*chunk->width+(x-chunkx)];
-		}
-	}
-
-	return NULL;
-}
-
 extern void
 pizarra_set_pixel(Pizarra *piz, int x, int y, uint32_t color)
 {
@@ -417,23 +434,6 @@ pizarra_get_pixel(Pizarra *piz, int x, int y, uint32_t *color)
 		return 1;
 	}
 	return 0;
-}
-
-static void
-__chunk_destroy(xcb_connection_t *conn, Chunk *chunk)
-{
-	xcb_free_gc(conn, chunk->gc);
-
-	if (chunk->shm) {
-		shmctl(chunk->x.shm.id, IPC_RMID, NULL);
-		xcb_shm_detach(conn, chunk->x.shm.seg);
-		shmdt(chunk->px);
-		xcb_free_pixmap(conn, chunk->x.shm.pixmap);
-	} else {
-		xcb_image_destroy(chunk->x.image);
-	}
-
-	free(chunk);
 }
 
 extern void
