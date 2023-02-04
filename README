@@ -1,0 +1,11 @@
+sinca is a simple infinite canvas application for X.
+For more information about it's usage check `man sinca`.
+
+This program requires libxcb, libxcb-cursor, libxcb-image,
+libxcb-shm and libxcb-keysyms to be installed.
+In order to build this program you need to run `make`.
+
+This program is free software; you can redistribute it
+and/or modify it under the terms of the GNU General Public License
+version 2 as published by the Free Software Foundation.
+See COPYING for more details.
