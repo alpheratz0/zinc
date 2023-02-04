@@ -236,9 +236,8 @@ addpoint(int x, int y, uint32_t color, int size)
 
 	for (dy = -size; dy < size; ++dy) {
 		for (dx = -size; dx < size; ++dx) {
-			if (dy*dy+dx*dx >= size*size)
-				continue;
-			if (!pizarra_get_pixel(pizarra, x + dx, y + dy, &prevcol))
+			if (dy * dy + dx * dx >= size * size ||
+					!pizarra_get_pixel(pizarra, x + dx, y + dy, &prevcol))
 				continue;
 #ifdef SINCA_USE_ROUGH_BRUSH
 			pizarra_set_pixel(pizarra, x + dx, y + dy, color);
