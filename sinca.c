@@ -213,6 +213,7 @@ blerp(uint8_t from, uint8_t to, double v)
 	return from + ((to - from) * v);
 }
 
+#ifndef SINCA_USE_ROUGH_BRUSH
 static uint32_t
 color_lerp(uint32_t from, uint32_t to, double v)
 {
@@ -225,6 +226,7 @@ color_lerp(uint32_t from, uint32_t to, double v)
 
 	return (r << 16) | (g << 8) | b;
 }
+#endif
 
 static void
 addpoint(int x, int y, uint32_t color, int size)
@@ -238,9 +240,13 @@ addpoint(int x, int y, uint32_t color, int size)
 				continue;
 			if (!pizarra_get_pixel(pizarra, x + dx, y + dy, &prevcol))
 				continue;
+#ifdef SINCA_USE_ROUGH_BRUSH
+			pizarra_set_pixel(pizarra, x + dx, y + dy, color);
+#else
 			pizarra_set_pixel(pizarra, x + dx, y + dy,
 					color_lerp(color, prevcol,
 						sqrt(dy * dy + dx * dx) / size));
+#endif
 		}
 	}
 }
