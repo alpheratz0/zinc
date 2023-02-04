@@ -286,7 +286,7 @@ pizarra_new(xcb_connection_t *conn, xcb_window_t win)
 }
 
 static void
-pizarra_regenerate_chunks(Pizarra *piz)
+__pizarra_regenerate_chunks(Pizarra *piz)
 {
 	int x, y, w, h;
 	int cx, cy, cw, ch;
@@ -329,7 +329,7 @@ pizarra_camera_move_relative(Pizarra *piz, int offx, int offy)
 	piz->pos.x += offx;
 	piz->pos.y += offy;
 
-	pizarra_regenerate_chunks(piz);
+	__pizarra_regenerate_chunks(piz);
 	__pizarra_keep_visible(piz);
 }
 
@@ -339,7 +339,7 @@ pizarra_set_viewport(Pizarra *piz, int vw, int vh)
 	piz->viewport_width = vw;
 	piz->viewport_height = vh;
 
-	pizarra_regenerate_chunks(piz);
+	__pizarra_regenerate_chunks(piz);
 	__pizarra_keep_visible(piz);
 }
 
