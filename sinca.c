@@ -169,44 +169,6 @@ xwindestroy(void)
 	xcb_disconnect(conn);
 }
 
-static void
-h_client_message(xcb_client_message_event_t *ev)
-{
-	xcb_atom_t WM_DELETE_WINDOW;
-
-	WM_DELETE_WINDOW = get_x11_atom("WM_DELETE_WINDOW");
-
-	/* check if the wm sent a delete window message */
-	/* https://www.x.org/docs/ICCCM/icccm.pdf */
-	if (ev->data.data32[0] == WM_DELETE_WINDOW)
-		should_close = true;
-}
-
-static void
-h_expose(xcb_expose_event_t *ev)
-{
-	(void) ev;
-	pizarra_render(pizarra);
-}
-
-static void
-h_key_press(xcb_key_press_event_t *ev)
-{
-	xcb_keysym_t key;
-
-	key = xcb_key_symbols_get_keysym(ksyms, ev->detail, 0);
-
-	switch (key) {
-	case XKB_KEY_q: drawinfo.color = 0xff0000; break; /* Red */
-	case XKB_KEY_w: drawinfo.color = 0x00ff00; break; /* Green */
-	case XKB_KEY_e: drawinfo.color = 0x0000ff; break; /* Blue */
-	case XKB_KEY_a: drawinfo.color = 0xffffff; break; /* White */
-	case XKB_KEY_s: drawinfo.color = 0x000000; break; /* Black */
-	case XKB_KEY_z: drawinfo.color = 0xff5100; break; /* Orange */
-	case XKB_KEY_x: drawinfo.color = 0xffff00; break; /* Yellow */
-	}
-}
-
 #ifndef SINCA_USE_ROUGH_BRUSH
 static inline uint8_t
 blerp(uint8_t from, uint8_t to, double v)
@@ -247,6 +209,44 @@ addpoint(int x, int y, uint32_t color, int size)
 						sqrt(dy * dy + dx * dx) / size));
 #endif
 		}
+	}
+}
+
+static void
+h_client_message(xcb_client_message_event_t *ev)
+{
+	xcb_atom_t WM_DELETE_WINDOW;
+
+	WM_DELETE_WINDOW = get_x11_atom("WM_DELETE_WINDOW");
+
+	/* check if the wm sent a delete window message */
+	/* https://www.x.org/docs/ICCCM/icccm.pdf */
+	if (ev->data.data32[0] == WM_DELETE_WINDOW)
+		should_close = true;
+}
+
+static void
+h_expose(xcb_expose_event_t *ev)
+{
+	(void) ev;
+	pizarra_render(pizarra);
+}
+
+static void
+h_key_press(xcb_key_press_event_t *ev)
+{
+	xcb_keysym_t key;
+
+	key = xcb_key_symbols_get_keysym(ksyms, ev->detail, 0);
+
+	switch (key) {
+	case XKB_KEY_q: drawinfo.color = 0xff0000; break; /* Red */
+	case XKB_KEY_w: drawinfo.color = 0x00ff00; break; /* Green */
+	case XKB_KEY_e: drawinfo.color = 0x0000ff; break; /* Blue */
+	case XKB_KEY_a: drawinfo.color = 0xffffff; break; /* White */
+	case XKB_KEY_s: drawinfo.color = 0x000000; break; /* Black */
+	case XKB_KEY_z: drawinfo.color = 0xff5100; break; /* Orange */
+	case XKB_KEY_x: drawinfo.color = 0xffff00; break; /* Yellow */
 	}
 }
 
