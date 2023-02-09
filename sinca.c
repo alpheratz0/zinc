@@ -207,13 +207,13 @@ h_key_press(xcb_key_press_event_t *ev)
 	}
 }
 
+#ifndef SINCA_USE_ROUGH_BRUSH
 static inline uint8_t
 blerp(uint8_t from, uint8_t to, double v)
 {
 	return from + ((to - from) * v);
 }
 
-#ifndef SINCA_USE_ROUGH_BRUSH
 static uint32_t
 color_lerp(uint32_t from, uint32_t to, double v)
 {
