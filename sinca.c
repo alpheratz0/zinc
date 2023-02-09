@@ -255,21 +255,20 @@ h_button_press(xcb_button_press_event_t *ev)
 {
 	switch (ev->detail) {
 	case XCB_BUTTON_INDEX_1:
-		if (!draginfo.active) {
-			drawinfo.active = true;
-			addpoint(ev->event_x, ev->event_y, drawinfo.color, drawinfo.brush_size);
-			pizarra_render(pizarra);
-		}
+		if (draginfo.active)
+			break;
+		drawinfo.active = true;
+		addpoint(ev->event_x, ev->event_y, drawinfo.color, drawinfo.brush_size);
+		pizarra_render(pizarra);
 		break;
 	case XCB_BUTTON_INDEX_2:
-		if (!drawinfo.active) {
-			draginfo.active = true;
-			draginfo.x = ev->event_x;
-			draginfo.y = ev->event_y;
-
-			xcb_change_window_attributes(conn, win, XCB_CW_CURSOR, &cursor_hand);
-			xcb_flush(conn);
-		}
+		if (drawinfo.active)
+			break;
+		draginfo.active = true;
+		draginfo.x = ev->event_x;
+		draginfo.y = ev->event_y;
+		xcb_change_window_attributes(conn, win, XCB_CW_CURSOR, &cursor_hand);
+		xcb_flush(conn);
 		break;
 	case XCB_BUTTON_INDEX_4:
 		pizarra_camera_move_relative(pizarra, 0, -30);
