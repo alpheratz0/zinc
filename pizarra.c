@@ -437,6 +437,28 @@ pizarra_get_pixel(Pizarra *piz, int x, int y, uint32_t *color)
 }
 
 extern void
+pizarra_camera_to_canvas_pos(Pizarra *piz, int x, int y, int *out_x, int *out_y)
+{
+	*out_x = x + piz->pos.x;
+	*out_y = y + piz->pos.y;
+}
+
+extern void
+pizarra_canvas_to_camera_pos(Pizarra *piz, int x, int y, int *out_x, int *out_y)
+{
+	*out_x = x - piz->pos.x;
+	*out_y = y - piz->pos.y;
+}
+
+extern void
+pizarra_clear(Pizarra *piz)
+{
+	Chunk *c;
+	for (c = __chunk_first(piz->root); c; c = c->next)
+		memset(c->px, 0, sizeof(uint32_t) * c->width * c->height);
+}
+
+extern void
 pizarra_destroy(Pizarra *piz)
 {
 	Chunk *chunk, *next;

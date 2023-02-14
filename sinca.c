@@ -30,6 +30,7 @@
 
 #include "utils.h"
 #include "pizarra.h"
+#include "history.h"
 
 typedef struct {
 	bool active;
@@ -44,6 +45,8 @@ typedef struct {
 } DrawInfo;
 
 static Pizarra *pizarra;
+static History *hist;
+static HistoryUserAction *hist_last_action;
 static xcb_connection_t *conn;
 static xcb_screen_t *scr;
 static xcb_window_t win;
@@ -191,6 +194,18 @@ color_lerp(uint32_t from, uint32_t to, double v)
 #endif
 
 static void
+addpointhist(int x, int y, uint32_t color, int size)
+{
+	if (NULL == hist_last_action)
+		hist_last_action = history_user_action_new();
+
+	pizarra_camera_to_canvas_pos(pizarra, x, y, &x, &y);
+
+	history_user_action_push_atomic(hist_last_action,
+			history_atomic_action_add_point_new(x, y, color, size));
+}
+
+static void
 addpoint(int x, int y, uint32_t color, int size)
 {
 	uint32_t prevcol;
@@ -235,6 +250,9 @@ h_expose(xcb_expose_event_t *ev)
 static void
 h_key_press(xcb_key_press_event_t *ev)
 {
+	int x, y;
+	size_t i, j;
+	HistoryAtomicAction *act;
 	xcb_keysym_t key;
 
 	key = xcb_key_symbols_get_keysym(ksyms, ev->detail, 0);
@@ -251,6 +269,23 @@ h_key_press(xcb_key_press_event_t *ev)
 	case XKB_KEY_t: drawinfo.color = 0x008080; break; /* Teal */
 	case XKB_KEY_c: drawinfo.color = 0xfffdd0; break; /* Cream */
 	}
+
+	if (key == XKB_KEY_z && ev->state & XCB_MOD_MASK_CONTROL) {
+		history_undo(hist);
+		pizarra_clear(pizarra);
+
+		for (i = 0; i < hist->len; ++i) {
+			for (j = 0; j < hist->actions[i]->n; ++j) {
+				act = hist->actions[i]->aa[j];
+				if (act->kind == HISTORY_ADD_POINT) {
+					pizarra_canvas_to_camera_pos(pizarra, act->info.ap.x, act->info.ap.y, &x, &y);
+					addpoint(x, y, act->info.ap.color, act->info.ap.size);
+				}
+			}
+		}
+
+		pizarra_render(pizarra);
+	}
 }
 
 static void
@@ -262,6 +297,7 @@ h_button_press(xcb_button_press_event_t *ev)
 			break;
 		drawinfo.active = true;
 		addpoint(ev->event_x, ev->event_y, drawinfo.color, drawinfo.brush_size);
+		addpointhist(ev->event_x, ev->event_y, drawinfo.color, drawinfo.brush_size);
 		pizarra_render(pizarra);
 		break;
 	case XCB_BUTTON_INDEX_2:
@@ -302,6 +338,7 @@ h_motion_notify(xcb_motion_notify_event_t *ev)
 
 	if (drawinfo.active) {
 		addpoint(ev->event_x, ev->event_y, drawinfo.color, drawinfo.brush_size);
+		addpointhist(ev->event_x, ev->event_y, drawinfo.color, drawinfo.brush_size);
 		pizarra_render(pizarra);
 	}
 }
@@ -312,6 +349,10 @@ h_button_release(xcb_button_release_event_t *ev)
 	switch (ev->detail) {
 	case XCB_BUTTON_INDEX_1:
 		drawinfo.active = false;
+		if (NULL == hist_last_action)
+			break;
+		history_do(hist, hist_last_action);
+		hist_last_action = NULL;
 		break;
 	case XCB_BUTTON_INDEX_2:
 		draginfo.active = false;
@@ -369,6 +410,7 @@ main(int argc, char **argv)
 	drawinfo.brush_size = 5;
 
 	pizarra = pizarra_new(conn, win);
+	hist = history_new();
 
 	while (!should_close && (ev = xcb_wait_for_event(conn))) {
 		switch (ev->response_type & ~0x80) {

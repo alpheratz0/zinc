@@ -41,4 +41,13 @@ extern int
 pizarra_get_pixel(Pizarra *piz, int x, int y, uint32_t *color);
 
 extern void
+pizarra_camera_to_canvas_pos(Pizarra *piz, int x, int y, int *out_x, int *out_y);
+
+extern void
+pizarra_canvas_to_camera_pos(Pizarra *piz, int x, int y, int *out_x, int *out_y);
+
+extern void
+pizarra_clear(Pizarra *piz);
+
+extern void
 pizarra_destroy(Pizarra *piz);

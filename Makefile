@@ -8,9 +8,10 @@ all: sinca
 sinca.o:    sinca.c
 pizarra.o:  pizarra.c
 utils.o:    utils.c
+history.o: history.c
 
-sinca: sinca.o pizarra.o utils.o
-	$(CC) $(LDFLAGS) -o sinca sinca.o pizarra.o utils.o $(LDLIBS)
+sinca: sinca.o pizarra.o utils.o history.o
+	$(CC) $(LDFLAGS) -o sinca sinca.o pizarra.o utils.o history.o $(LDLIBS)
 
 clean:
 	rm -f sinca *.o sinca-$(VERSION).tar.gz
@@ -26,7 +27,7 @@ install: all
 dist: clean
 	mkdir -p sinca-$(VERSION)
 	cp -R COPYING config.mk Makefile README sinca.1 sinca.c pizarra.c utils.c \
-		pizarra.h utils.h sinca-$(VERSION)
+		history.c pizarra.h utils.h history.h sinca-$(VERSION)
 	tar -cf sinca-$(VERSION).tar sinca-$(VERSION)
 	gzip sinca-$(VERSION).tar
 	rm -rf sinca-$(VERSION)
