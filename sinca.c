@@ -194,22 +194,20 @@ color_lerp(uint32_t from, uint32_t to, double v)
 #endif
 
 static void
-addpointhist(int x, int y, uint32_t color, int size)
+addpoint(int x, int y, uint32_t color, int size, bool add_to_history)
 {
-	if (NULL == hist_last_action)
-		hist_last_action = history_user_action_new();
-
-	pizarra_camera_to_canvas_pos(pizarra, x, y, &x, &y);
-
-	history_user_action_push_atomic(hist_last_action,
-			history_atomic_action_add_point_new(x, y, color, size));
-}
-
-static void
-addpoint(int x, int y, uint32_t color, int size)
-{
+	int canvasx, canvasy;
 	uint32_t prevcol;
 	int dx, dy;
+
+	if (add_to_history) {
+		if (NULL == hist_last_action)
+			hist_last_action = history_user_action_new();
+		pizarra_camera_to_canvas_pos(pizarra, x, y, &canvasx, &canvasy);
+		history_user_action_push_atomic(hist_last_action,
+				history_atomic_action_add_point_new(canvasx, canvasy,
+					color, size));
+	}
 
 	for (dy = -size; dy < size; ++dy) {
 		for (dx = -size; dx < size; ++dx) {
@@ -279,7 +277,7 @@ h_key_press(xcb_key_press_event_t *ev)
 				act = hist->actions[i]->aa[j];
 				if (act->kind == HISTORY_ADD_POINT) {
 					pizarra_canvas_to_camera_pos(pizarra, act->info.ap.x, act->info.ap.y, &x, &y);
-					addpoint(x, y, act->info.ap.color, act->info.ap.size);
+					addpoint(x, y, act->info.ap.color, act->info.ap.size, false);
 				}
 			}
 		}
@@ -296,8 +294,7 @@ h_button_press(xcb_button_press_event_t *ev)
 		if (draginfo.active)
 			break;
 		drawinfo.active = true;
-		addpoint(ev->event_x, ev->event_y, drawinfo.color, drawinfo.brush_size);
-		addpointhist(ev->event_x, ev->event_y, drawinfo.color, drawinfo.brush_size);
+		addpoint(ev->event_x, ev->event_y, drawinfo.color, drawinfo.brush_size, true);
 		pizarra_render(pizarra);
 		break;
 	case XCB_BUTTON_INDEX_2:
@@ -337,8 +334,7 @@ h_motion_notify(xcb_motion_notify_event_t *ev)
 	}
 
 	if (drawinfo.active) {
-		addpoint(ev->event_x, ev->event_y, drawinfo.color, drawinfo.brush_size);
-		addpointhist(ev->event_x, ev->event_y, drawinfo.color, drawinfo.brush_size);
+		addpoint(ev->event_x, ev->event_y, drawinfo.color, drawinfo.brush_size, true);
 		pizarra_render(pizarra);
 	}
 }

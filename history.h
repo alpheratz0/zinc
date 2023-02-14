@@ -5,8 +5,6 @@
 #include "pizarra.h"
 
 typedef enum {
-	HISTORY_DRAW_POINT,
-	HISTORY_CHANGE_COLOR,
 	HISTORY_ADD_POINT
 		// TODO(alpheratz): Maybe history_drag_action?
 } HistoryAtomicActionKind;
@@ -14,13 +12,6 @@ typedef enum {
 typedef struct {
 	HistoryAtomicActionKind kind;
 	union {
-		struct {
-			int x;
-			int y;
-		} dp; /* HISTORY_DRAW_POINT */
-		struct {
-			uint32_t color;
-		} cc; /* HISTORY_CHANGE_COLOR */
 		struct {
 			int x;
 			int y;
@@ -46,12 +37,6 @@ history_new(void);
 
 extern HistoryUserAction *
 history_user_action_new(void);
-
-extern HistoryAtomicAction *
-history_atomic_action_draw_point_new(int x, int y);
-
-extern HistoryAtomicAction *
-history_atomic_action_change_color_new(uint32_t color);
 
 extern HistoryAtomicAction *
 history_atomic_action_add_point_new(int x, int y, uint32_t color, int size);

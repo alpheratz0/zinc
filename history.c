@@ -40,27 +40,6 @@ history_user_action_new(void)
 }
 
 extern HistoryAtomicAction *
-history_atomic_action_draw_point_new(int x, int y)
-{
-	HistoryAtomicAction *haa;
-	haa = malloc(sizeof(HistoryAtomicAction));
-	haa->kind = HISTORY_DRAW_POINT;
-	haa->info.dp.x = x;
-	haa->info.dp.y = y;
-	return haa;
-}
-
-extern HistoryAtomicAction *
-history_atomic_action_change_color_new(uint32_t color)
-{
-	HistoryAtomicAction *haa;
-	haa = malloc(sizeof(HistoryAtomicAction));
-	haa->kind = HISTORY_CHANGE_COLOR;
-	haa->info.cc.color = color;
-	return haa;
-}
-
-extern HistoryAtomicAction *
 history_atomic_action_add_point_new(int x, int y, uint32_t color, int size)
 {
 	HistoryAtomicAction *haa;
@@ -113,15 +92,10 @@ static void
 history_atomic_action_print(const HistoryAtomicAction *haa)
 {
 	switch (haa->kind) {
-	case HISTORY_CHANGE_COLOR:
-		printf("\t\tChanging color to #%06x\n", haa->info.cc.color);
-		break;
-	case HISTORY_DRAW_POINT:
-		printf("\t\tDrawing point at x: %d y: %d\n", haa->info.dp.x, haa->info.dp.y);
-		break;
 	case HISTORY_ADD_POINT:
 		printf("\t\tAdding a point at x: %d y: %d with color: %06x and brush size: %d\n",
 				haa->info.ap.x, haa->info.ap.y, haa->info.ap.color, haa->info.ap.size);
+		break;
 	}
 }
 
@@ -149,29 +123,3 @@ history_print(const History *hist)
 		history_user_action_print(hua);
 	}
 }
-
-/*  */
-/* int */
-/* main(void) */
-/* { */
-/* 	History *hist; */
-/* 	HistoryUserAction *last_action; */
-/*  */
-/* 	hist = history_new(); */
-/*  */
-/* 	last_action = history_user_action_new(); */
-/* 	history_user_action_push_atomic(last_action, */
-/* 			history_atomic_action_draw_point_new(0, 0)); */
-/* 	history_user_action_push_atomic(last_action, */
-/* 			history_atomic_action_draw_point_new(0, 1)); */
-/* 	history_do(hist, last_action); */
-/*  */
-/* 	last_action = history_user_action_new(); */
-/* 	history_user_action_push_atomic(last_action, */
-/* 			history_atomic_action_change_color_new(0xff00f3)); */
-/* 	history_do(hist, last_action); */
-/*  */
-/* 	history_print(hist); */
-/*  */
-/* 	return 0; */
-/* } */
