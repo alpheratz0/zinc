@@ -131,12 +131,12 @@ xwininit(void)
 
 	_NET_WM_NAME = get_x11_atom("_NET_WM_NAME");
 	UTF8_STRING = get_x11_atom("UTF8_STRING");
-	wm_name = "sinca";
+	wm_name = "zinc";
 
 	xcb_change_property(conn, XCB_PROP_MODE_REPLACE, win,
 		_NET_WM_NAME, UTF8_STRING, 8, strlen(wm_name), wm_name);
 
-	wm_class = "sinca\0sinca\0";
+	wm_class = "zinc\0zinc\0";
 	xcb_change_property(conn, XCB_PROP_MODE_REPLACE, win, XCB_ATOM_WM_CLASS,
 		XCB_ATOM_STRING, 8, strlen(wm_class), wm_class);
 
@@ -172,7 +172,7 @@ xwindestroy(void)
 	xcb_disconnect(conn);
 }
 
-#ifndef SINCA_USE_ROUGH_BRUSH
+#ifndef ZINC_USE_ROUGH_BRUSH
 static inline uint8_t
 blerp(uint8_t from, uint8_t to, double v)
 {
@@ -214,7 +214,7 @@ addpoint(int x, int y, uint32_t color, int size, bool add_to_history)
 			if (dy * dy + dx * dx >= size * size ||
 					!pizarra_get_pixel(pizarra, x + dx, y + dy, &prevcol))
 				continue;
-#ifdef SINCA_USE_ROUGH_BRUSH
+#ifdef ZINC_USE_ROUGH_BRUSH
 			pizarra_set_pixel(pizarra, x + dx, y + dy, color);
 #else
 			pizarra_set_pixel(pizarra, x + dx, y + dy,
@@ -374,14 +374,14 @@ h_mapping_notify(xcb_mapping_notify_event_t *ev)
 static void
 usage(void)
 {
-	puts("usage: sinca [-hv]");
+	puts("usage: zinc [-hv]");
 	exit(0);
 }
 
 static void
 version(void)
 {
-	puts("sinca version "VERSION);
+	puts("zinc version "VERSION);
 	exit(0);
 }
 

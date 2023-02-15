@@ -3,35 +3,35 @@
 
 include config.mk
 
-all: sinca
+all: zinc
 
-sinca.o:    sinca.c
+zinc.o:     zinc.c
 pizarra.o:  pizarra.c
 utils.o:    utils.c
-history.o: history.c
+history.o:  history.c
 
-sinca: sinca.o pizarra.o utils.o history.o
-	$(CC) $(LDFLAGS) -o sinca sinca.o pizarra.o utils.o history.o $(LDLIBS)
+zinc: zinc.o pizarra.o utils.o history.o
+	$(CC) $(LDFLAGS) -o zinc zinc.o pizarra.o utils.o history.o $(LDLIBS)
 
 clean:
-	rm -f sinca *.o sinca-$(VERSION).tar.gz
+	rm -f zinc *.o zinc-$(VERSION).tar.gz
 
 install: all
 	mkdir -p $(DESTDIR)$(PREFIX)/bin
-	cp -f sinca $(DESTDIR)$(PREFIX)/bin
-	chmod 755 $(DESTDIR)$(PREFIX)/bin/sinca
+	cp -f zinc $(DESTDIR)$(PREFIX)/bin
+	chmod 755 $(DESTDIR)$(PREFIX)/bin/zinc
 	mkdir -p $(DESTDIR)$(MANPREFIX)/man1
-	cp -f sinca.1 $(DESTDIR)$(MANPREFIX)/man1
-	chmod 644 $(DESTDIR)$(MANPREFIX)/man1/sinca.1
+	cp -f zinc.1 $(DESTDIR)$(MANPREFIX)/man1
+	chmod 644 $(DESTDIR)$(MANPREFIX)/man1/zinc.1
 
 dist: clean
-	mkdir -p sinca-$(VERSION)
-	cp -R COPYING config.mk Makefile README sinca.1 sinca.c pizarra.c utils.c \
-		history.c pizarra.h utils.h history.h sinca-$(VERSION)
-	tar -cf sinca-$(VERSION).tar sinca-$(VERSION)
-	gzip sinca-$(VERSION).tar
-	rm -rf sinca-$(VERSION)
+	mkdir -p zinc-$(VERSION)
+	cp -R COPYING config.mk Makefile README zinc.1 zinc.c pizarra.c utils.c \
+		history.c pizarra.h utils.h history.h zinc-$(VERSION)
+	tar -cf zinc-$(VERSION).tar zinc-$(VERSION)
+	gzip zinc-$(VERSION).tar
+	rm -rf zinc-$(VERSION)
 
 uninstall:
-	rm -f $(DESTDIR)$(PREFIX)/bin/sinca
-	rm -f $(DESTDIR)$(MANPREFIX)/man1/sinca.1
+	rm -f $(DESTDIR)$(PREFIX)/bin/zinc
+	rm -f $(DESTDIR)$(MANPREFIX)/man1/zinc.1
