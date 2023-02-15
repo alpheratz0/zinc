@@ -73,14 +73,7 @@ extern void
 history_user_action_push_atomic(HistoryUserAction *hua, HistoryAtomicAction *hac)
 {
 	hua->n++;
-
-	if (hua->n == 1) {
-		hua->aa = malloc(sizeof(HistoryAtomicAction *));
-	} else {
-		hua->aa = realloc(hua->aa,
-				hua->n * sizeof(HistoryAtomicAction *));
-	}
-
+	hua->aa = realloc(hua->aa, hua->n * sizeof(HistoryAtomicAction *));
 	hua->aa[hua->n - 1] = hac;
 }
 
