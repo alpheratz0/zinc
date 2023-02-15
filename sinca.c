@@ -395,9 +395,11 @@ main(int argc, char **argv)
 			switch ((*argv)[1]) {
 			case 'h': usage(); break;
 			case 'v': version(); break;
+			default: die("invalid option %s", *argv); break;
 			}
+		} else {
+			die("unexpected argument: %s", *argv);
 		}
-		die("invalid option %s", *argv); break;
 	}
 
 	xwininit();
