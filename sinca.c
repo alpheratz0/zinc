@@ -268,7 +268,7 @@ h_key_press(xcb_key_press_event_t *ev)
 	case XKB_KEY_c: drawinfo.color = 0xfffdd0; break; /* Cream */
 	}
 
-	if (key == XKB_KEY_z && ev->state & XCB_MOD_MASK_CONTROL) {
+	if (key == XKB_KEY_z && ev->state & XCB_MOD_MASK_CONTROL && !drawinfo.active) {
 		history_undo(hist);
 		pizarra_clear(pizarra);
 
