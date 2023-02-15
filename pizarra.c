@@ -40,8 +40,6 @@ typedef struct Chunk {
 	int width;
 	int height;
 	uint32_t *px;
-	char *stored_in;
-	int loaded;
 
 	/* X11 */
 	int shm;
@@ -65,10 +63,6 @@ struct Pizarra {
 	int viewport_width;
 
 	Chunk *root;
-
-	/* TODO */
-	/* int min_visible_index; */
-	/* int max_visible_index; */
 
 	xcb_connection_t *conn;
 	xcb_window_t win;
@@ -164,25 +158,6 @@ __chunk_new(xcb_connection_t *conn, xcb_window_t win, int w, int h)
 	}
 
 	return c;
-}
-
-static void __attribute__((unused))
-__chunk_unload(Chunk *c) /* TODO: implement */
-{
-	(void) c;
-}
-
-static void __attribute__((unused))
-__chunk_load(Chunk *c) /* TODO: implement */
-{
-	(void) c;
-}
-
-static bool __attribute__((unused))
-__chunk_is_visible(const Chunk *c) /* TODO: implement */
-{
-	(void) c;
-	return false;
 }
 
 static Chunk *
