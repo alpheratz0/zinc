@@ -423,6 +423,7 @@ main(int argc, char **argv)
 		free(ev);
 	}
 
+	history_destroy(hist);
 	pizarra_destroy(pizarra);
 	xwindestroy();
 

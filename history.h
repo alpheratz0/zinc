@@ -69,3 +69,6 @@ history_undo(History *hist);
 
 extern void
 history_print(const History *hist);
+
+extern void
+history_destroy(History *hist);

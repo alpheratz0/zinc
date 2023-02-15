@@ -133,3 +133,12 @@ history_print(const History *hist)
 		history_user_action_print(hua);
 	}
 }
+
+extern void
+history_destroy(History *hist)
+{
+	while (hist->len-- > 0)
+		history_user_action_free(hist->actions[hist->len]);
+	free(hist->actions);
+	free(hist);
+}
