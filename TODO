@@ -1,1 +1,4 @@
-[x] implement history
+- [x] implement history
+- [ ] documentation (man page)
+	- [ ] keybindings
+	- [ ] mouse bindings
