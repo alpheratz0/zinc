@@ -78,7 +78,7 @@ get_x11_atom(const char *name)
 	return atom;
 }
 
-extern void
+static void
 xwininit(void)
 {
 	const char *wm_class,
@@ -161,7 +161,7 @@ xwininit(void)
 	xcb_flush(conn);
 }
 
-extern void
+static void
 xwindestroy(void)
 {
 	xcb_free_cursor(conn, cursor_hand);
