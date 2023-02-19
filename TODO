@@ -1,4 +1,7 @@
-- [x] implement history
-- [ ] documentation (man page)
-	- [ ] keybindings
-	- [ ] mouse bindings
+[] history
+    [x] basic implementation
+    [] dynamic array -> double linked list
+    [] redo
+[] documentation (man page)
+    [] keybindings
+    [] mouse bindings
