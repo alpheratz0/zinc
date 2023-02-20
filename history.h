@@ -19,35 +19,27 @@
 
 #include <stdint.h>
 
-#include "pizarra.h"
+typedef struct HistoryAtomicAction HistoryAtomicAction;
+typedef struct HistoryUserAction HistoryUserAction;
+typedef struct History History;
 
-typedef enum {
-	HISTORY_ADD_POINT
-		// TODO(alpheratz): Maybe history_drag_action?
-} HistoryAtomicActionKind;
+struct HistoryAtomicAction {
+	HistoryAtomicAction *next;
+	int x, y;
+	uint32_t color;
+	int size;
+};
 
-typedef struct {
-	HistoryAtomicActionKind kind;
-	union {
-		struct {
-			int x;
-			int y;
-			uint32_t color;
-			int size;
-		} ap; /* HISTORY_ADD_POINT */
-	} info;
-} HistoryAtomicAction;
+struct HistoryUserAction {
+	HistoryUserAction *prev;
+	HistoryAtomicAction *aa;
+	HistoryUserAction *next;
+};
 
-typedef struct {
-	size_t n;
-	HistoryAtomicAction **aa;
-} HistoryUserAction;
-
-typedef struct {
-	size_t len;
-	size_t capacity;
-	HistoryUserAction **actions;
-} History;
+struct History {
+	HistoryUserAction *root;
+	HistoryUserAction *current;
+};
 
 extern History *
 history_new(void);
@@ -56,10 +48,11 @@ extern HistoryUserAction *
 history_user_action_new(void);
 
 extern HistoryAtomicAction *
-history_atomic_action_add_point_new(int x, int y, uint32_t color, int size);
+history_atomic_action_new(int x, int y, uint32_t color, int size);
 
 extern void
-history_user_action_push_atomic(HistoryUserAction *hua, HistoryAtomicAction *hac);
+history_user_action_push_atomic(HistoryUserAction *hua,
+		HistoryAtomicAction *haa);
 
 extern void
 history_do(History *hist, HistoryUserAction *hua);
@@ -68,7 +61,7 @@ extern void
 history_undo(History *hist);
 
 extern void
-history_print(const History *hist);
+history_redo(History *hist);
 
 extern void
 history_destroy(History *hist);

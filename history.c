@@ -15,7 +15,6 @@
 
 */
 
-#include <stdio.h>
 #include <stdlib.h>
 
 #include "history.h"
@@ -29,9 +28,11 @@ history_atomic_action_free(HistoryAtomicAction *haa)
 static void
 history_user_action_free(HistoryUserAction *hua)
 {
-	while (hua->n-- > 0)
-		history_atomic_action_free(hua->aa[hua->n]);
-	free(hua->aa);
+	HistoryAtomicAction *todelete, *tmp;
+	for (todelete = hua->aa; todelete; todelete = tmp) {
+		tmp = todelete->next;
+		history_atomic_action_free(todelete);
+	}
 	free(hua);
 }
 
@@ -40,9 +41,8 @@ history_new(void)
 {
 	History *hist;
 	hist = malloc(sizeof(History));
-	hist->capacity = 0;
-	hist->len = 0;
-	hist->actions = NULL;
+	hist->root = history_user_action_new();
+	hist->current = hist->root;
 	return hist;
 }
 
@@ -51,94 +51,83 @@ history_user_action_new(void)
 {
 	HistoryUserAction *hua;
 	hua = malloc(sizeof(HistoryUserAction));
-	hua->n = 0;
+	hua->next = NULL;
+	hua->prev = NULL;
 	hua->aa = NULL;
 	return hua;
 }
 
 extern HistoryAtomicAction *
-history_atomic_action_add_point_new(int x, int y, uint32_t color, int size)
+history_atomic_action_new(int x, int y, uint32_t color, int size)
 {
 	HistoryAtomicAction *haa;
 	haa = malloc(sizeof(HistoryAtomicAction));
-	haa->kind = HISTORY_ADD_POINT;
-	haa->info.ap.x = x;
-	haa->info.ap.y = y;
-	haa->info.ap.color = color;
-	haa->info.ap.size = size;
+	haa->x = x;
+	haa->y = y;
+	haa->color = color;
+	haa->size = size;
+	haa->next = NULL;
 	return haa;
 }
 
 extern void
-history_user_action_push_atomic(HistoryUserAction *hua, HistoryAtomicAction *hac)
+history_user_action_push_atomic(HistoryUserAction *hua,
+		HistoryAtomicAction *haa)
 {
-	hua->n++;
-	hua->aa = realloc(hua->aa, hua->n * sizeof(HistoryAtomicAction *));
-	hua->aa[hua->n - 1] = hac;
+	HistoryAtomicAction *last;
+
+	// check if there is no atomic actions
+	// created yet
+	if (NULL == hua->aa) {
+		hua->aa = haa;
+		return;
+	}
+
+	// get last node
+	for (last = hua->aa; last->next; last = last->next)
+		;
+
+	last->next = haa;
 }
 
 extern void
 history_do(History *hist, HistoryUserAction *hua)
 {
-	hist->len++;
-	if (hist->len >= hist->capacity) {
-		hist->capacity += 32;
-		hist->actions = realloc(hist->actions, hist->capacity * sizeof(HistoryUserAction *));
+	HistoryUserAction *todelete, *tmp;
+	for (todelete = hist->current->next; todelete; todelete = tmp) {
+		tmp = todelete->next;
+		history_user_action_free(todelete);
 	}
-	hist->actions[hist->len - 1] = hua;
+
+	// link
+	hist->current->next = hua;
+	hua->prev = hist->current;
+
+	// update position in history
+	hist->current = hua;
 }
 
 extern void
 history_undo(History *hist)
 {
-	if (hist->len == 0)
-		return;
-	hist->len -= 1;
-	history_user_action_free(hist->actions[hist->len]);
-	hist->actions[hist->len] = NULL;
-}
-
-static void
-history_atomic_action_print(const HistoryAtomicAction *haa)
-{
-	switch (haa->kind) {
-	case HISTORY_ADD_POINT:
-		printf("\t\tAdding a point at x: %d y: %d with color: %06x and brush size: %d\n",
-				haa->info.ap.x, haa->info.ap.y, haa->info.ap.color, haa->info.ap.size);
-		break;
-	}
-}
-
-static void
-history_user_action_print(const HistoryUserAction *hua)
-{
-	size_t i;
-	HistoryAtomicAction *haa;
-	for (i = 0; i < hua->n; ++i) {
-		printf("\tAtomic Action #%zu\n", i);
-		haa = hua->aa[i];
-		history_atomic_action_print(haa);
-	}
+	if (NULL != hist->current->prev)
+		hist->current = hist->current->prev;
 }
 
 extern void
-history_print(const History *hist)
+history_redo(History *hist)
 {
-	size_t i;
-	HistoryUserAction *hua;
-
-	for (i = 0; i < hist->len; ++i) {
-		printf("User Action #%zu\n", i);
-		hua = hist->actions[i];
-		history_user_action_print(hua);
-	}
+	if (NULL != hist->current->next)
+		hist->current = hist->current->next;
 }
 
 extern void
 history_destroy(History *hist)
 {
-	while (hist->len-- > 0)
-		history_user_action_free(hist->actions[hist->len]);
-	free(hist->actions);
+	HistoryUserAction *todelete, *tmp;
+	for (todelete = hist->root; todelete; todelete = tmp) {
+		tmp = todelete->next;
+		history_user_action_free(todelete);
+	}
 	free(hist);
 }

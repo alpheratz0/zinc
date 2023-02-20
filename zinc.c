@@ -205,7 +205,7 @@ addpoint(int x, int y, uint32_t color, int size, bool add_to_history)
 			hist_last_action = history_user_action_new();
 		pizarra_camera_to_canvas_pos(pizarra, x, y, &canvasx, &canvasy);
 		history_user_action_push_atomic(hist_last_action,
-				history_atomic_action_add_point_new(canvasx, canvasy,
+				history_atomic_action_new(canvasx, canvasy,
 					color, size));
 	}
 
@@ -223,6 +223,39 @@ addpoint(int x, int y, uint32_t color, int size, bool add_to_history)
 #endif
 		}
 	}
+}
+
+static void
+regenfromhist(void)
+{
+	int x, y;
+	HistoryUserAction *hua;
+	HistoryAtomicAction *haa;
+
+	for (hua = hist->root; hua != hist->current->next; hua = hua->next) {
+		for (haa = hua->aa; haa; haa = haa->next) {
+			pizarra_canvas_to_camera_pos(pizarra, haa->x, haa->y, &x, &y);
+			addpoint(x, y, haa->color, haa->size, false);
+		}
+	}
+}
+
+static void
+undo(void)
+{
+	history_undo(hist);
+	pizarra_clear(pizarra);
+	regenfromhist();
+	pizarra_render(pizarra);
+}
+
+static void
+redo(void)
+{
+	history_redo(hist);
+	pizarra_clear(pizarra);
+	regenfromhist();
+	pizarra_render(pizarra);
 }
 
 static void
@@ -248,12 +281,16 @@ h_expose(xcb_expose_event_t *ev)
 static void
 h_key_press(xcb_key_press_event_t *ev)
 {
-	int x, y;
-	size_t i, j;
-	HistoryAtomicAction *act;
 	xcb_keysym_t key;
 
 	key = xcb_key_symbols_get_keysym(ksyms, ev->detail, 0);
+
+	if (ev->state & XCB_MOD_MASK_CONTROL) {
+		switch (key) {
+		case XKB_KEY_z: if (!drawinfo.active) undo(); return;
+		case XKB_KEY_y: if (!drawinfo.active) redo(); return;
+		}
+	}
 
 	switch (key) {
 	case XKB_KEY_r: drawinfo.color = 0xb81c00; break; /* Red */
@@ -266,23 +303,6 @@ h_key_press(xcb_key_press_event_t *ev)
 	case XKB_KEY_f: drawinfo.color = 0xca2c92; break; /* Fuchsia */
 	case XKB_KEY_t: drawinfo.color = 0x008080; break; /* Teal */
 	case XKB_KEY_c: drawinfo.color = 0xfffdd0; break; /* Cream */
-	}
-
-	if (key == XKB_KEY_z && ev->state & XCB_MOD_MASK_CONTROL && !drawinfo.active) {
-		history_undo(hist);
-		pizarra_clear(pizarra);
-
-		for (i = 0; i < hist->len; ++i) {
-			for (j = 0; j < hist->actions[i]->n; ++j) {
-				act = hist->actions[i]->aa[j];
-				if (act->kind == HISTORY_ADD_POINT) {
-					pizarra_canvas_to_camera_pos(pizarra, act->info.ap.x, act->info.ap.y, &x, &y);
-					addpoint(x, y, act->info.ap.color, act->info.ap.size, false);
-				}
-			}
-		}
-
-		pizarra_render(pizarra);
 	}
 }
 
