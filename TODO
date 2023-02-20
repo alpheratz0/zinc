@@ -1,7 +1,7 @@
-[] history
+[x] history
     [x] basic implementation
-    [] dynamic array -> double linked list
-    [] redo
+    [x] dynamic array -> double linked list
+    [x] redo
 [] documentation (man page)
     [] keybindings
     [] mouse bindings
