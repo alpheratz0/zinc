@@ -6,5 +6,5 @@
     [] keybindings
     [] mouse bindings
 [] some asserts
-[] xmalloc
-[] xcalloc
+[x] xmalloc
+[x] xcalloc
