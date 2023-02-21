@@ -1,4 +1,4 @@
-.Dd February 15, 2023
+.Dd February 21, 2023
 .Dt ZINC 1
 .Sh NAME
 .Nm zinc
@@ -9,7 +9,7 @@
 .Sh DESCRIPTION
 The
 .Nm
-application lets you draw over an infinite canvas using the mouse.
+application provides you an infinite Y-axis canvas where you can draw with ease using the mouse. Nothing more. Nothing less.
 .Sh OPTIONS
 .Bl -tag -width indent
 .It Fl h
@@ -17,8 +17,45 @@ show usage
 .It Fl v
 display the program version
 .El
+.Sh KEYBOARD BINDINGS
+.Bl -tag -width indent
+.It Ctrl+z
+Undo (If compiled with history support).
+.It Ctrl+y
+Redo (If compiled with history support).
+.It r
+Set color to red.
+.It g
+Set color to green.
+.It b
+Set color to blue.
+.It w
+Set color to white.
+.It q
+Set color to black.
+.It o
+Set color to orange.
+.It y
+Set color to yellow.
+.It f
+Set color to fuchsia.
+.It t
+Set color to teal.
+.It c
+Set color to cream.
+.El
+.Sh MOUSE BINDINGS
+.Bl -tag -width indent
+.It Left Mouse Button
+Draw.
+.It Middle Mouse Button
+Move around.
+.It Scroll Up/Down
+Scroll up/down.
+.El
 .Sh SEE ALSO
 .Xr X 7
+.Xr apint 1
 .Sh AUTHORS
 .An alpheratz0 Aq Mt alpheratz99@protonmail.com
 .Sh BUGS
