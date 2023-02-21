@@ -2,9 +2,9 @@
     [x] basic implementation
     [x] dynamic array -> double linked list
     [x] redo
-[] documentation (man page)
-    [] keybindings
-    [] mouse bindings
+[x] documentation (man page)
+    [x] keybindings
+    [x] mouse bindings
 [] some asserts
 [x] xmalloc
 [x] xcalloc
