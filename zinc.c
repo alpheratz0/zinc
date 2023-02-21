@@ -44,9 +44,12 @@ typedef struct {
 	int brush_size;
 } DrawInfo;
 
-static Pizarra *pizarra;
+#ifndef ZINC_NO_HISTORY
 static History *hist;
 static HistoryUserAction *hist_last_action;
+#endif
+
+static Pizarra *pizarra;
 static xcb_connection_t *conn;
 static xcb_screen_t *scr;
 static xcb_window_t win;
@@ -196,9 +199,11 @@ color_lerp(uint32_t from, uint32_t to, double v)
 static void
 addpoint(int x, int y, uint32_t color, int size, bool add_to_history)
 {
-	int canvasx, canvasy;
-	uint32_t prevcol;
 	int dx, dy;
+	uint32_t prevcol;
+
+#ifndef ZINC_NO_HISTORY
+	int canvasx, canvasy;
 
 	if (add_to_history) {
 		if (NULL == hist_last_action)
@@ -208,6 +213,9 @@ addpoint(int x, int y, uint32_t color, int size, bool add_to_history)
 				history_atomic_action_new(canvasx, canvasy,
 					color, size));
 	}
+#else
+	(void) add_to_history;
+#endif
 
 	for (dy = -size; dy < size; ++dy) {
 		for (dx = -size; dx < size; ++dx) {
@@ -225,6 +233,7 @@ addpoint(int x, int y, uint32_t color, int size, bool add_to_history)
 	}
 }
 
+#ifndef ZINC_NO_HISTORY
 static void
 regenfromhist(void)
 {
@@ -259,6 +268,7 @@ redo(void)
 		pizarra_render(pizarra);
 	}
 }
+#endif
 
 static void
 h_client_message(xcb_client_message_event_t *ev)
@@ -289,8 +299,10 @@ h_key_press(xcb_key_press_event_t *ev)
 
 	if (ev->state & XCB_MOD_MASK_CONTROL) {
 		switch (key) {
+#ifndef ZINC_NO_HISTORY
 		case XKB_KEY_z: if (!drawinfo.active) undo(); return;
 		case XKB_KEY_y: if (!drawinfo.active) redo(); return;
+#endif
 		}
 	}
 
@@ -367,10 +379,12 @@ h_button_release(xcb_button_release_event_t *ev)
 	switch (ev->detail) {
 	case XCB_BUTTON_INDEX_1:
 		drawinfo.active = false;
+#ifndef ZINC_NO_HISTORY
 		if (NULL == hist_last_action)
 			break;
 		history_do(hist, hist_last_action);
 		hist_last_action = NULL;
+#endif
 		break;
 	case XCB_BUTTON_INDEX_2:
 		draginfo.active = false;
@@ -430,7 +444,10 @@ main(int argc, char **argv)
 	drawinfo.brush_size = 5;
 
 	pizarra = pizarra_new(conn, win);
+
+#ifndef ZINC_NO_HISTORY
 	hist = history_new();
+#endif
 
 	while (!should_close && (ev = xcb_wait_for_event(conn))) {
 		switch (ev->response_type & ~0x80) {
@@ -447,7 +464,10 @@ main(int argc, char **argv)
 		free(ev);
 	}
 
+#ifndef ZINC_NO_HISTORY
 	history_destroy(hist);
+#endif
+
 	pizarra_destroy(pizarra);
 	xwindestroy();
 
