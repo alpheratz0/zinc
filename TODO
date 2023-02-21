@@ -5,3 +5,6 @@
 [] documentation (man page)
     [] keybindings
     [] mouse bindings
+[] some asserts
+[] xmalloc
+[] xcalloc
