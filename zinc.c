@@ -243,19 +243,21 @@ regenfromhist(void)
 static void
 undo(void)
 {
-	history_undo(hist);
-	pizarra_clear(pizarra);
-	regenfromhist();
-	pizarra_render(pizarra);
+	if (history_undo(hist)) {
+		pizarra_clear(pizarra);
+		regenfromhist();
+		pizarra_render(pizarra);
+	}
 }
 
 static void
 redo(void)
 {
-	history_redo(hist);
-	pizarra_clear(pizarra);
-	regenfromhist();
-	pizarra_render(pizarra);
+	if (history_redo(hist)) {
+		pizarra_clear(pizarra);
+		regenfromhist();
+		pizarra_render(pizarra);
+	}
 }
 
 static void

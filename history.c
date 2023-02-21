@@ -15,6 +15,7 @@
 
 */
 
+#include <stdbool.h>
 #include <stdlib.h>
 
 #include "utils.h"
@@ -108,18 +109,22 @@ history_do(History *hist, HistoryUserAction *hua)
 	hist->current = hua;
 }
 
-extern void
+extern bool
 history_undo(History *hist)
 {
-	if (NULL != hist->current->prev)
-		hist->current = hist->current->prev;
+	if (NULL == hist->current->prev)
+		return false;
+	hist->current = hist->current->prev;
+	return true;
 }
 
-extern void
+extern bool
 history_redo(History *hist)
 {
-	if (NULL != hist->current->next)
-		hist->current = hist->current->next;
+	if (NULL == hist->current->next)
+		return false;
+	hist->current = hist->current->next;
+	return true;
 }
 
 extern void

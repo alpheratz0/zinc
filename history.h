@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include <stdbool.h>
 #include <stdint.h>
 
 typedef struct HistoryAtomicAction HistoryAtomicAction;
@@ -57,10 +58,10 @@ history_user_action_push_atomic(HistoryUserAction *hua,
 extern void
 history_do(History *hist, HistoryUserAction *hua);
 
-extern void
+extern bool
 history_undo(History *hist);
 
-extern void
+extern bool
 history_redo(History *hist);
 
 extern void
