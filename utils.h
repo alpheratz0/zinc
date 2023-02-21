@@ -17,5 +17,13 @@
 
 #pragma once
 
+#include <stddef.h>
+
 extern void
 die(const char *fmt, ...);
+
+extern void *
+xmalloc(size_t size);
+
+extern void *
+xcalloc(size_t nmemb, size_t size);

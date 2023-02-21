@@ -33,3 +33,21 @@ die(const char *fmt, ...)
 	fputc('\n', stderr);
 	exit(1);
 }
+
+extern void *
+xmalloc(size_t size)
+{
+	void *ptr;
+	if (NULL == (ptr = malloc(size)))
+		die("OOM");
+	return ptr;
+}
+
+extern void *
+xcalloc(size_t nmemb, size_t size)
+{
+	void *ptr;
+	if (NULL == (ptr = calloc(nmemb, size)))
+		die("OOM");
+	return ptr;
+}

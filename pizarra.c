@@ -113,7 +113,7 @@ __chunk_new(xcb_connection_t *conn, xcb_window_t win, int w, int h)
 	assert(scr != NULL);
 
 	szpx = w * h * sizeof(uint32_t);
-	c = calloc(1, sizeof(Chunk));
+	c = xcalloc(1, sizeof(Chunk));
 	depth = scr->root_depth;
 
 	c->width = w;
@@ -147,10 +147,7 @@ __chunk_new(xcb_connection_t *conn, xcb_window_t win, int w, int h)
 				depth, c->x.shm.seg, 0);
 	} else {
 		c->shm = 0;
-		c->px = calloc(w * h, sizeof(uint32_t));
-
-		if (NULL == c->px)
-			die("OOM");
+		c->px = xcalloc(w * h, sizeof(uint32_t));
 
 		c->x.image = xcb_image_create_native(conn, w, h,
 				XCB_IMAGE_FORMAT_Z_PIXMAP, depth, c->px,
@@ -324,7 +321,7 @@ pizarra_new(xcb_connection_t *conn, xcb_window_t win)
 	width = scr->width_in_pixels;
 	height = scr->height_in_pixels;
 
-	piz = calloc(1, sizeof(Pizarra));
+	piz = xcalloc(1, sizeof(Pizarra));
 
 	piz->conn = conn;
 	piz->win = win;

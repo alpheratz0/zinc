@@ -17,6 +17,7 @@
 
 #include <stdlib.h>
 
+#include "utils.h"
 #include "history.h"
 
 static void
@@ -40,7 +41,7 @@ extern History *
 history_new(void)
 {
 	History *hist;
-	hist = malloc(sizeof(History));
+	hist = xmalloc(sizeof(History));
 	hist->root = history_user_action_new();
 	hist->current = hist->root;
 	return hist;
@@ -50,7 +51,7 @@ extern HistoryUserAction *
 history_user_action_new(void)
 {
 	HistoryUserAction *hua;
-	hua = malloc(sizeof(HistoryUserAction));
+	hua = xmalloc(sizeof(HistoryUserAction));
 	hua->next = NULL;
 	hua->prev = NULL;
 	hua->aa = NULL;
@@ -61,7 +62,7 @@ extern HistoryAtomicAction *
 history_atomic_action_new(int x, int y, uint32_t color, int size)
 {
 	HistoryAtomicAction *haa;
-	haa = malloc(sizeof(HistoryAtomicAction));
+	haa = xmalloc(sizeof(HistoryAtomicAction));
 	haa->x = x;
 	haa->y = y;
 	haa->color = color;
