@@ -1,3 +1,10 @@
+         _
+     ___(_)_ __   ___
+    |_  / | '_ \ / __|       The simple
+     / /| | | | | (__        infinite canvas
+    /___|_|_| |_|\___|       for X
+
+
 zinc is a simple infinite canvas application for X.
 For more information about it's usage check `man zinc`.
 
