@@ -58,9 +58,12 @@ typedef struct Chunk {
 } Chunk;
 
 struct Pizarra {
+	/* camera position */
 	Vector2 pos;
-	int viewport_height;
+
+	/* camera width & height */
 	int viewport_width;
+	int viewport_height;
 
 	Chunk *root;
 
