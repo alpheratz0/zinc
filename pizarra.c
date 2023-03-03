@@ -158,23 +158,19 @@ __chunk_new(xcb_connection_t *conn, xcb_window_t win, int w, int h)
 }
 
 static Chunk *
-__chunk_first(const Chunk *c)
+__chunk_first(Chunk *c)
 {
-	Chunk *first;
-	first = (Chunk *)c;
-	while (first->previous)
-		first = first->previous;
-	return first;
+	while (c->previous)
+		c = c->previous;
+	return c;
 }
 
 static Chunk *
-__chunk_last(const Chunk *c)
+__chunk_last(Chunk *c)
 {
-	Chunk *last;
-	last = (Chunk *)c;
-	while (last->next)
-		last = last->next;
-	return last;
+	while (c->next)
+		c = c->next;
+	return c;
 }
 
 static void
