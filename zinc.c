@@ -55,7 +55,8 @@ static xcb_screen_t *scr;
 static xcb_window_t win;
 static xcb_key_symbols_t *ksyms;
 static xcb_cursor_context_t *cctx;
-static xcb_cursor_t cursor_hand, cursor_arrow;
+static xcb_cursor_t cursor_hand;
+static xcb_cursor_t cursor_cross;
 static DrawInfo drawinfo;
 static DragInfo draginfo;
 static bool should_close;
@@ -113,7 +114,7 @@ xwininit(void)
 		die("can't create cursor context");
 
 	cursor_hand = xcb_cursor_load_cursor(cctx, "fleur");
-	cursor_arrow = xcb_cursor_load_cursor(cctx, "left_ptr");
+	cursor_cross = xcb_cursor_load_cursor(cctx, "cross");
 	ksyms = xcb_key_symbols_alloc(conn);
 	win = xcb_generate_id(conn);
 
@@ -160,6 +161,7 @@ xwininit(void)
 	xcb_change_property(conn, XCB_PROP_MODE_REPLACE, win,
 		_NET_WM_STATE, XCB_ATOM_ATOM, 32, 1, &_NET_WM_STATE_FULLSCREEN);
 
+	xcb_change_window_attributes(conn, win, XCB_CW_CURSOR, &cursor_cross);
 	xcb_map_window(conn, win);
 	xcb_flush(conn);
 }
@@ -168,7 +170,7 @@ static void
 xwindestroy(void)
 {
 	xcb_free_cursor(conn, cursor_hand);
-	xcb_free_cursor(conn, cursor_arrow);
+	xcb_free_cursor(conn, cursor_cross);
 	xcb_key_symbols_free(ksyms);
 	xcb_destroy_window(conn, win);
 	xcb_cursor_context_free(cctx);
@@ -388,7 +390,7 @@ h_button_release(xcb_button_release_event_t *ev)
 		break;
 	case XCB_BUTTON_INDEX_2:
 		draginfo.active = false;
-		xcb_change_window_attributes(conn, win, XCB_CW_CURSOR, &cursor_arrow);
+		xcb_change_window_attributes(conn, win, XCB_CW_CURSOR, &cursor_cross);
 		xcb_flush(conn);
 		break;
 	}
