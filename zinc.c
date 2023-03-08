@@ -301,7 +301,7 @@ h_key_press(xcb_key_press_event_t *ev)
 
 	key = xcb_key_symbols_get_keysym(ksyms, ev->detail, 0);
 
-	if (picker->visible)
+	if (picker_is_visible(picker))
 		picker_hide(picker);
 
 	if (ev->state & XCB_MOD_MASK_CONTROL) {

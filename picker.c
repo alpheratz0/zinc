@@ -45,6 +45,27 @@
 #define MIN(a,b) ((a)<(b)?(a):(b))
 #define MAX(a,b) ((a)>(b)?(a):(b))
 
+typedef struct Color Color;
+
+struct Color {
+	float r, g, b;
+	float h, s, l;
+};
+
+struct Picker {
+	int width;
+	int height;
+	bool selecting;
+	bool visible;
+	uint32_t *px;
+	xcb_connection_t *conn;
+	xcb_window_t win;
+	xcb_gcontext_t gc;
+	xcb_image_t *img;
+	PickerOnColorChangeHandler occ;
+	Color color;
+};
+
 /*
  * hue2rgb, color_compute_hsl & color_compute_rgb are
  * modified versions of functions taken from
@@ -173,7 +194,6 @@ picker_new(xcb_connection_t *conn, xcb_window_t parent_win, PickerOnColorChangeH
 	picker->occ = occ;
 
 	picker->conn = conn;
-	picker->parent_win = parent_win;
 	picker->gc = xcb_generate_id(conn);
 	picker->win = xcb_generate_id(conn);
 
@@ -201,7 +221,7 @@ picker_new(xcb_connection_t *conn, xcb_window_t parent_win, PickerOnColorChangeH
 }
 
 static void
-_picker_draw(Picker *picker)
+__picker_draw(Picker *picker)
 {
 	int dx, dy;
 	Color col;
@@ -227,11 +247,10 @@ _picker_draw(Picker *picker)
 	for (dy = 0; dy < HUE_RECT_HEIGHT; dy++) {
 		col = color_make_hsl(((float)(dy))/HUE_RECT_HEIGHT, picker->color.s, picker->color.l);
 		for (dx = 0; dx < HUE_RECT_WIDTH; dx++) {
-			if (dx == 0 || dx == HUE_RECT_WIDTH-1 || dy == 0 || dy == HUE_RECT_HEIGHT-1) {
+			if (dx == 0 || dx == HUE_RECT_WIDTH-1 || dy == 0 || dy == HUE_RECT_HEIGHT-1)
 				picker->px[(PADDING+dy)*picker->width+HUE_RECT_X1+dx] = 0x777777;
-			} else {
+			else
 				picker->px[(PADDING+dy)*picker->width+HUE_RECT_X1+dx] = color_to_uint32(col);
-			}
 		}
 	}
 
@@ -240,7 +259,7 @@ _picker_draw(Picker *picker)
 }
 
 static void
-_picker_select_at(Picker *picker, int x, int y)
+__picker_select_at(Picker *picker, int x, int y)
 {
 	if (x > SATURATION_LIGHTNESS_RECT_X1 && x < SATURATION_LIGHTNESS_RECT_X2 &&
 			y > SATURATION_LIGHTNESS_RECT_Y1 && y < SATURATION_LIGHTNESS_RECT_Y2) {
@@ -256,30 +275,30 @@ _picker_select_at(Picker *picker, int x, int y)
 	color_compute_rgb(&picker->color);
 
 	picker->occ(picker, color_to_uint32(picker->color));
-	_picker_draw(picker);
+	__picker_draw(picker);
 }
 
 static bool
-_h_picker_expose(Picker *picker, const xcb_expose_event_t *ev)
+__h_picker_expose(Picker *picker, const xcb_expose_event_t *ev)
 {
 	if (ev->window != picker->win)
 		return false;
-	_picker_draw(picker);
+	__picker_draw(picker);
 	return true;
 }
 
 static bool
-_h_picker_button_press(Picker *picker, const xcb_button_press_event_t *ev)
+__h_picker_button_press(Picker *picker, const xcb_button_press_event_t *ev)
 {
 	if (ev->event != picker->win)
 		return false;
 	picker->selecting = true;
-	_picker_select_at(picker, ev->event_x, ev->event_y);
+	__picker_select_at(picker, ev->event_x, ev->event_y);
 	return true;
 }
 
 static bool
-_h_picker_button_release(Picker *picker, const xcb_button_release_event_t *ev)
+__h_picker_button_release(Picker *picker, const xcb_button_release_event_t *ev)
 {
 	if (ev->event != picker->win)
 		return false;
@@ -288,12 +307,12 @@ _h_picker_button_release(Picker *picker, const xcb_button_release_event_t *ev)
 }
 
 static bool
-_h_picker_motion_notify(Picker *picker, const xcb_motion_notify_event_t *ev)
+__h_picker_motion_notify(Picker *picker, const xcb_motion_notify_event_t *ev)
 {
 	if (ev->event != picker->win)
 		return false;
 	if (picker->selecting)
-		_picker_select_at(picker, ev->event_x, ev->event_y);
+		__picker_select_at(picker, ev->event_x, ev->event_y);
 	return true;
 }
 
@@ -301,12 +320,18 @@ extern bool
 picker_try_process_event(Picker *picker, const xcb_generic_event_t *ge)
 {
 	switch (ge->response_type & ~0x80) {
-	case XCB_EXPOSE:           return _h_picker_expose(picker, (void *)(ge));
-	case XCB_BUTTON_PRESS:     return _h_picker_button_press(picker, (void *)(ge));
-	case XCB_BUTTON_RELEASE:   return _h_picker_button_release(picker, (void *)(ge));
-	case XCB_MOTION_NOTIFY:    return _h_picker_motion_notify(picker, (void *)(ge));
+	case XCB_EXPOSE:           return __h_picker_expose(picker, (void *)(ge));
+	case XCB_BUTTON_PRESS:     return __h_picker_button_press(picker, (void *)(ge));
+	case XCB_BUTTON_RELEASE:   return __h_picker_button_release(picker, (void *)(ge));
+	case XCB_MOTION_NOTIFY:    return __h_picker_motion_notify(picker, (void *)(ge));
 	default: return false;
 	}
+}
+
+extern bool
+picker_is_visible(const Picker *picker)
+{
+	return picker->visible;
 }
 
 extern void
@@ -341,7 +366,7 @@ picker_set(Picker *picker, uint32_t color)
 	b = (color >> 0) & 0xff;
 
 	picker->color = color_make_rgb(r, g, b);
-	_picker_draw(picker);
+	__picker_draw(picker);
 }
 
 extern void

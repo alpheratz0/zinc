@@ -24,35 +24,17 @@
 #include <xcb/xcb_image.h>
 
 typedef struct Picker Picker;
-typedef struct Color Color;
 
 typedef void (*PickerOnColorChangeHandler)(Picker *picker, uint32_t color);
-
-struct Color {
-	float r, g, b;
-	float h, s, l;
-};
-
-struct Picker {
-	int width;
-	int height;
-	bool selecting;
-	bool visible;
-	uint32_t *px;
-	xcb_connection_t *conn;
-	xcb_window_t parent_win;
-	xcb_window_t win;
-	xcb_gcontext_t gc;
-	xcb_image_t *img;
-	PickerOnColorChangeHandler occ;
-	Color color;
-};
 
 extern Picker *
 picker_new(xcb_connection_t *conn, xcb_window_t parent_win, PickerOnColorChangeHandler occ);
 
 extern bool
 picker_try_process_event(Picker *picker, const xcb_generic_event_t *ge);
+
+extern bool
+picker_is_visible(const Picker *picker);
 
 extern void
 picker_show(Picker *picker, int x, int y);

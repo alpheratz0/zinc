@@ -22,18 +22,18 @@
 #include "history.h"
 
 static void
-history_atomic_action_free(HistoryAtomicAction *haa)
+__history_atomic_action_free(HistoryAtomicAction *haa)
 {
 	free(haa);
 }
 
 static void
-history_user_action_free(HistoryUserAction *hua)
+__history_user_action_free(HistoryUserAction *hua)
 {
 	HistoryAtomicAction *todelete, *tmp;
 	for (todelete = hua->aa; todelete; todelete = tmp) {
 		tmp = todelete->next;
-		history_atomic_action_free(todelete);
+		__history_atomic_action_free(todelete);
 	}
 	free(hua);
 }
@@ -98,7 +98,7 @@ history_do(History *hist, HistoryUserAction *hua)
 	HistoryUserAction *todelete, *tmp;
 	for (todelete = hist->current->next; todelete; todelete = tmp) {
 		tmp = todelete->next;
-		history_user_action_free(todelete);
+		__history_user_action_free(todelete);
 	}
 
 	// link
@@ -133,7 +133,7 @@ history_destroy(History *hist)
 	HistoryUserAction *todelete, *tmp;
 	for (todelete = hist->root; todelete; todelete = tmp) {
 		tmp = todelete->next;
-		history_user_action_free(todelete);
+		__history_user_action_free(todelete);
 	}
 	free(hist);
 }
