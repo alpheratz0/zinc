@@ -30,6 +30,7 @@
 
 #include "utils.h"
 #include "pizarra.h"
+#include "picker.h"
 #include "history.h"
 
 typedef struct {
@@ -50,6 +51,7 @@ static HistoryUserAction *hist_last_action;
 #endif
 
 static Pizarra *pizarra;
+static Picker *picker;
 static xcb_connection_t *conn;
 static xcb_screen_t *scr;
 static xcb_window_t win;
@@ -299,6 +301,9 @@ h_key_press(xcb_key_press_event_t *ev)
 
 	key = xcb_key_symbols_get_keysym(ksyms, ev->detail, 0);
 
+	if (picker->visible)
+		picker_hide(picker);
+
 	if (ev->state & XCB_MOD_MASK_CONTROL) {
 		switch (key) {
 #ifndef ZINC_NO_HISTORY
@@ -329,6 +334,7 @@ h_button_press(xcb_button_press_event_t *ev)
 	case XCB_BUTTON_INDEX_1:
 		if (draginfo.active)
 			break;
+		picker_hide(picker);
 		drawinfo.active = true;
 		addpoint(ev->event_x, ev->event_y, drawinfo.color, drawinfo.brush_size, true);
 		pizarra_render(pizarra);
@@ -341,6 +347,10 @@ h_button_press(xcb_button_press_event_t *ev)
 		draginfo.y = ev->event_y;
 		xcb_change_window_attributes(conn, win, XCB_CW_CURSOR, &cursor_hand);
 		xcb_flush(conn);
+		break;
+	case XCB_BUTTON_INDEX_3:
+		picker_set(picker, drawinfo.color);;
+		picker_show(picker, ev->event_x, ev->event_y);
 		break;
 	case XCB_BUTTON_INDEX_4:
 		pizarra_camera_move_relative(pizarra, 0, -30);
@@ -410,6 +420,13 @@ h_mapping_notify(xcb_mapping_notify_event_t *ev)
 }
 
 static void
+h_picker_color_change(Picker *picker, uint32_t color)
+{
+	(void) picker;
+	drawinfo.color = color;
+}
+
+static void
 usage(void)
 {
 	puts("usage: zinc [-hv]");
@@ -446,12 +463,20 @@ main(int argc, char **argv)
 	drawinfo.brush_size = 5;
 
 	pizarra = pizarra_new(conn, win);
+	picker = picker_new(conn, win, h_picker_color_change);
 
 #ifndef ZINC_NO_HISTORY
 	hist = history_new();
 #endif
 
 	while (!should_close && (ev = xcb_wait_for_event(conn))) {
+
+		// check if it is an event targeted to our color picker
+		if (picker_try_process_event(picker, ev)) {
+			free(ev);
+			continue;
+		}
+
 		switch (ev->response_type & ~0x80) {
 		case XCB_CLIENT_MESSAGE:     h_client_message((void *)(ev)); break;
 		case XCB_EXPOSE:             h_expose((void *)(ev)); break;
@@ -471,6 +496,7 @@ main(int argc, char **argv)
 #endif
 
 	pizarra_destroy(pizarra);
+	picker_destroy(picker);
 	xwindestroy();
 
 	return 0;
