@@ -22,20 +22,40 @@
 #include "history.h"
 
 static void
-__history_atomic_action_free(HistoryAtomicAction *haa)
+__history_atomic_action_destroy(HistoryAtomicAction *haa)
 {
 	free(haa);
 }
 
 static void
-__history_user_action_free(HistoryUserAction *hua)
+__history_atomic_action_list_destroy(HistoryAtomicAction *list)
 {
-	HistoryAtomicAction *todelete, *tmp;
-	for (todelete = hua->aa; todelete; todelete = tmp) {
-		tmp = todelete->next;
-		__history_atomic_action_free(todelete);
+	HistoryAtomicAction *tmp;
+
+	while (NULL != list) {
+		tmp = list->next;
+		__history_atomic_action_destroy(list);
+		list = tmp;
 	}
+}
+
+static void
+__history_user_action_destroy(HistoryUserAction *hua)
+{
+	__history_atomic_action_list_destroy(hua->aa);
 	free(hua);
+}
+
+static void
+__history_user_action_list_destroy(HistoryUserAction *list)
+{
+	HistoryUserAction *tmp;
+
+	while (NULL != list) {
+		tmp = list->next;
+		__history_user_action_destroy(list);
+		list = tmp;
+	}
 }
 
 extern History *
@@ -95,11 +115,8 @@ history_user_action_push_atomic(HistoryUserAction *hua,
 extern void
 history_do(History *hist, HistoryUserAction *hua)
 {
-	HistoryUserAction *todelete, *tmp;
-	for (todelete = hist->current->next; todelete; todelete = tmp) {
-		tmp = todelete->next;
-		__history_user_action_free(todelete);
-	}
+	// destroy redo history
+	__history_user_action_list_destroy(hist->current->next);
 
 	// link
 	hist->current->next = hua;
@@ -130,10 +147,6 @@ history_redo(History *hist)
 extern void
 history_destroy(History *hist)
 {
-	HistoryUserAction *todelete, *tmp;
-	for (todelete = hist->root; todelete; todelete = tmp) {
-		tmp = todelete->next;
-		__history_user_action_free(todelete);
-	}
+	__history_user_action_list_destroy(hist->root);
 	free(hist);
 }

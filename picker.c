@@ -66,15 +66,16 @@ struct Picker {
 	Color color;
 };
 
-/*
- * hue2rgb, color_compute_hsl & color_compute_rgb are
- * modified versions of functions taken from
- * https://gist.github.com/ciembor/1494530
- * License: 'do what you want license'
- * thanks ciembor (Maciej Ciemborowicz) :)!
- */
+/***********************************************/
+/*      __hue2rgb, __color_compute_hsl &       */
+/*      __color_compute_rgb are modified       */
+/*      versions of functions taken from       */
+/*   https://gist.github.com/ciembor/1494530   */
+/*     License: 'do what you want license'     */
+/*   thanks ciembor (Maciej Ciemborowicz) :)!  */
+/***********************************************/
 static float
-hue2rgb(float p, float q, float t)
+__hue2rgb(float p, float q, float t)
 {
 	if (t < 0) t += 1;
 	if (t > 1) t -= 1;
@@ -85,7 +86,7 @@ hue2rgb(float p, float q, float t)
 }
 
 static void
-color_compute_hsl(Color *color)
+__color_compute_hsl(Color *color)
 {
 	float d;
 	float max, min;
@@ -116,7 +117,7 @@ color_compute_hsl(Color *color)
 }
 
 static void
-color_compute_rgb(Color *color)
+__color_compute_rgb(Color *color)
 {
 	float q, p;
 	float h, s, l;
@@ -125,41 +126,41 @@ color_compute_rgb(Color *color)
 	s = color->s;
 	l = color->l;
 
-	if(0 == s) {
+	if (0 == s) {
 		color->r = color->g = color->b = l * 255; // achromatic
 	} else {
 		q = l < 0.5 ? l * (1 + s) : l + s - l * s;
 		p = 2 * l - q;
-		color->r = hue2rgb(p, q, h + 1./3) * 255;
-		color->g = hue2rgb(p, q, h) * 255;
-		color->b = hue2rgb(p, q, h - 1./3) * 255;
+		color->r = __hue2rgb(p, q, h + 1./3) * 255;
+		color->g = __hue2rgb(p, q, h) * 255;
+		color->b = __hue2rgb(p, q, h - 1./3) * 255;
 	}
 }
 
 static Color
-color_make_hsl(float h, float s, float l)
+__color_make_hsl(float h, float s, float l)
 {
 	Color color;
 	color.h = h;
 	color.s = s;
 	color.l = l;
-	color_compute_rgb(&color);
+	__color_compute_rgb(&color);
 	return color;
 }
 
 static Color
-color_make_rgb(float r, float g, float b)
+__color_make_rgb(float r, float g, float b)
 {
 	Color color;
 	color.r = r;
 	color.g = g;
 	color.b = b;
-	color_compute_hsl(&color);
+	__color_compute_hsl(&color);
 	return color;
 }
 
 static uint32_t
-color_to_uint32(const Color color)
+__color_to_uint32(const Color color)
 {
 	return (((int)(color.r) << 16) |
 			((int)(color.g) <<  8) |
@@ -239,18 +240,18 @@ __picker_draw(Picker *picker)
 
 	for (dy = 0; dy < SATURATION_LIGHTNESS_RECT_HEIGHT; dy++) {
 		for (dx = 0; dx < SATURATION_LIGHTNESS_RECT_WIDTH; dx++) {
-			col = color_make_hsl(picker->color.h, 1-(float)dx/SATURATION_LIGHTNESS_RECT_WIDTH, 1-(float)dy/SATURATION_LIGHTNESS_RECT_HEIGHT);
-			picker->px[(PADDING+dy)*picker->width+PADDING+dx] = color_to_uint32(col);
+			col = __color_make_hsl(picker->color.h, 1-(float)dx/SATURATION_LIGHTNESS_RECT_WIDTH, 1-(float)dy/SATURATION_LIGHTNESS_RECT_HEIGHT);
+			picker->px[(PADDING+dy)*picker->width+PADDING+dx] = __color_to_uint32(col);
 		}
 	}
 
 	for (dy = 0; dy < HUE_RECT_HEIGHT; dy++) {
-		col = color_make_hsl(((float)(dy))/HUE_RECT_HEIGHT, picker->color.s, picker->color.l);
+		col = __color_make_hsl(((float)(dy))/HUE_RECT_HEIGHT, picker->color.s, picker->color.l);
 		for (dx = 0; dx < HUE_RECT_WIDTH; dx++) {
 			if (dx == 0 || dx == HUE_RECT_WIDTH-1 || dy == 0 || dy == HUE_RECT_HEIGHT-1)
 				picker->px[(PADDING+dy)*picker->width+HUE_RECT_X1+dx] = 0x777777;
 			else
-				picker->px[(PADDING+dy)*picker->width+HUE_RECT_X1+dx] = color_to_uint32(col);
+				picker->px[(PADDING+dy)*picker->width+HUE_RECT_X1+dx] = __color_to_uint32(col);
 		}
 	}
 
@@ -272,9 +273,9 @@ __picker_select_at(Picker *picker, int x, int y)
 		picker->color.h = ((float)(y-PADDING)/HUE_RECT_HEIGHT);
 	}
 
-	color_compute_rgb(&picker->color);
+	__color_compute_rgb(&picker->color);
 
-	picker->occ(picker, color_to_uint32(picker->color));
+	picker->occ(picker, __color_to_uint32(picker->color));
 	__picker_draw(picker);
 }
 
@@ -292,8 +293,16 @@ __h_picker_button_press(Picker *picker, const xcb_button_press_event_t *ev)
 {
 	if (ev->event != picker->win)
 		return false;
-	picker->selecting = true;
-	__picker_select_at(picker, ev->event_x, ev->event_y);
+	switch (ev->detail) {
+	case XCB_BUTTON_INDEX_1:
+		picker->selecting = true;
+		__picker_select_at(picker, ev->event_x, ev->event_y);
+		break;
+	case XCB_BUTTON_INDEX_2:
+	case XCB_BUTTON_INDEX_3:
+		picker_hide(picker);
+		break;
+	}
 	return true;
 }
 
@@ -302,7 +311,8 @@ __h_picker_button_release(Picker *picker, const xcb_button_release_event_t *ev)
 {
 	if (ev->event != picker->win)
 		return false;
-	picker->selecting = false;
+	if (ev->detail == XCB_BUTTON_INDEX_1)
+		picker->selecting = false;
 	return true;
 }
 
@@ -365,7 +375,7 @@ picker_set(Picker *picker, uint32_t color)
 	g = (color >> 8) & 0xff;
 	b = (color >> 0) & 0xff;
 
-	picker->color = color_make_rgb(r, g, b);
+	picker->color = __color_make_rgb(r, g, b);
 	__picker_draw(picker);
 }
 
