@@ -259,14 +259,14 @@ __picker_draw(Picker *picker)
 static void
 __picker_select_at(Picker *picker, int x, int y)
 {
-	if (x > SATURATION_LIGHTNESS_RECT_X1 && x < SATURATION_LIGHTNESS_RECT_X2 &&
-			y > SATURATION_LIGHTNESS_RECT_Y1 && y < SATURATION_LIGHTNESS_RECT_Y2) {
+	if (x >= SATURATION_LIGHTNESS_RECT_X1 && x < SATURATION_LIGHTNESS_RECT_X2 &&
+			y >= SATURATION_LIGHTNESS_RECT_Y1 && y < SATURATION_LIGHTNESS_RECT_Y2) {
 		picker->color.s = 1-((float)(x-PADDING)/SATURATION_LIGHTNESS_RECT_WIDTH);
 		picker->color.l = 1-((float)(y-PADDING)/SATURATION_LIGHTNESS_RECT_HEIGHT);
 	}
 
-	if (x > HUE_RECT_X1 && x < HUE_RECT_X2 &&
-			y > HUE_RECT_Y1 && y < HUE_RECT_Y2) {
+	if (x >= HUE_RECT_X1 && x < HUE_RECT_X2 &&
+			y >= HUE_RECT_Y1 && y < HUE_RECT_Y2) {
 		picker->color.h = ((float)(y-PADDING)/HUE_RECT_HEIGHT);
 	}
 
