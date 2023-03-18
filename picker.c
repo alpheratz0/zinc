@@ -358,6 +358,7 @@ picker_show(Picker *picker, int x, int y)
 extern void
 picker_hide(Picker *picker)
 {
+	picker->selecting = false;
 	picker->visible = false;
 	xcb_unmap_window(picker->conn, picker->win);
 	xcb_flush(picker->conn);
