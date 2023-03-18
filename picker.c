@@ -246,7 +246,7 @@ __picker_draw(Picker *picker)
 	}
 
 	for (dy = 0; dy < HUE_RECT_HEIGHT; dy++) {
-		col = __color_make_hsl(((float)(dy))/HUE_RECT_HEIGHT, 0.5, 0.5);
+		col = __color_make_hsl(((float)(dy))/HUE_RECT_HEIGHT, 1.0, 0.5);
 		for (dx = 0; dx < HUE_RECT_WIDTH; dx++) {
 			picker->px[(PADDING+dy)*picker->width+HUE_RECT_X1+dx] = __color_to_uint32(col);
 		}
