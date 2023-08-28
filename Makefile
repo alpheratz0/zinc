@@ -3,19 +3,20 @@
 
 include config.mk
 
+OBJ=\
+	src/zinc.o \
+	src/pizarra.o \
+	src/picker.o \
+	src/utils.o \
+	src/history.o
+
 all: zinc
 
-zinc.o:     zinc.c
-pizarra.o:  pizarra.c
-picker.o:   picker.c
-utils.o:    utils.c
-history.o:  history.c
-
-zinc: zinc.o pizarra.o picker.o utils.o history.o
-	$(CC) $(LDFLAGS) -o zinc zinc.o pizarra.o picker.o utils.o history.o $(LDLIBS)
+zinc: $(OBJ)
+	$(CC) $(LDFLAGS) -o zinc $(OBJ) $(LDLIBS)
 
 clean:
-	rm -f zinc *.o zinc-$(VERSION).tar.gz
+	rm -f zinc $(OBJ) zinc-$(VERSION).tar.gz
 
 install: all
 	mkdir -p $(DESTDIR)$(PREFIX)/bin
@@ -27,8 +28,8 @@ install: all
 
 dist: clean
 	mkdir -p zinc-$(VERSION)
-	cp -R COPYING config.mk Makefile README zinc.1 zinc.c pizarra.c picker.c \
-		utils.c history.c pizarra.h picker.h utils.h history.h zinc-$(VERSION)
+	cp -R COPYING config.mk Makefile README zinc.1 src include \
+		zinc-$(VERSION)
 	tar -cf zinc-$(VERSION).tar zinc-$(VERSION)
 	gzip zinc-$(VERSION).tar
 	rm -rf zinc-$(VERSION)
