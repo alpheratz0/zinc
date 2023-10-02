@@ -13,7 +13,7 @@ OBJ=\
 all: zinc
 
 zinc: $(OBJ)
-	$(CC) $(LDFLAGS) -o zinc $(OBJ) $(LDLIBS)
+	$(CC) $(LDFLAGS) -o zinc $(OBJ)
 
 clean:
 	rm -f zinc $(OBJ) zinc-$(VERSION).tar.gz
