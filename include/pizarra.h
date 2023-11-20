@@ -33,6 +33,9 @@ extern void
 pizarra_camera_move_relative(Pizarra *piz, int offx, int offy);
 
 extern void
+pizarra_camera_move_to_center(Pizarra *piz);
+
+extern void
 pizarra_set_viewport(Pizarra *piz, int vw, int vh);
 
 extern void

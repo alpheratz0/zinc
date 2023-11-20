@@ -345,6 +345,12 @@ pizarra_camera_move_relative(Pizarra *piz, int offx, int offy)
 }
 
 extern void
+pizarra_camera_move_to_center(Pizarra *piz)
+{
+	piz->pos.x = (piz->root->width - piz->viewport_width) / 2;
+}
+
+extern void
 pizarra_set_viewport(Pizarra *piz, int vw, int vh)
 {
 	piz->viewport_width = vw;

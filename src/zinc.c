@@ -276,6 +276,13 @@ redo(void)
 #endif
 
 static void
+center(void)
+{
+	pizarra_camera_move_to_center(pizarra);
+	pizarra_render(pizarra);
+}
+
+static void
 h_client_message(xcb_client_message_event_t *ev)
 {
 	xcb_atom_t WM_DELETE_WINDOW;
@@ -307,6 +314,7 @@ h_key_press(xcb_key_press_event_t *ev)
 
 	if (ev->state & XCB_MOD_MASK_CONTROL) {
 		switch (key) {
+		case XKB_KEY_c: if (!drawinfo.active) center(); return;
 #ifndef ZINC_NO_HISTORY
 		case XKB_KEY_z: if (!drawinfo.active) undo(); return;
 		case XKB_KEY_y: if (!drawinfo.active) redo(); return;
