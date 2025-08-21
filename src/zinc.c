@@ -44,10 +44,14 @@ typedef struct {
 	bool active;
 	uint32_t color;
 	int brush_size;
+	int last_x;
+	int last_y;
+	bool has_prev;
 } DrawInfo;
 
 #define ZINC_WM_NAME "zinc"
 #define ZINC_WM_CLASS "zinc\0zinc\0"
+#define ZINC_STROKE_SPACING_FACTOR 0.55f
 
 #ifndef ZINC_NO_HISTORY
 static History *hist;
@@ -236,6 +240,31 @@ addpoint(int x, int y, uint32_t color, int size, bool add_to_history)
 	}
 }
 
+static void
+addsegment(int x0, int y0, int x1, int y1, uint32_t color,
+		int size, bool add_to_history)
+{
+	int dx = x1 - x0;
+	int dy = y1 - y0;
+	float dist = sqrtf((float)(dx*dx + dy*dy));
+	if (dist <= 0.0f) {
+		return;
+	}
+
+	float spacing = size * ZINC_STROKE_SPACING_FACTOR;
+	if (spacing < 1.0f) spacing = 1.0f;
+
+	int steps = (int)ceilf(dist / spacing);
+	float stepx = dx / (float)steps;
+	float stepy = dy / (float)steps;
+
+	for (int i = 1; i <= steps; ++i) {
+		int xi = (int)lroundf(x0 + stepx * i);
+		int yi = (int)lroundf(y0 + stepy * i);
+		addpoint(xi, yi, color, size, add_to_history);
+	}
+}
+
 #ifndef ZINC_NO_HISTORY
 static void
 regenfromhist(void)
@@ -343,6 +372,9 @@ h_button_press(xcb_button_press_event_t *ev)
 			break;
 		picker_hide(picker);
 		drawinfo.active = true;
+		drawinfo.last_x = ev->event_x;
+		drawinfo.last_y = ev->event_y;
+		drawinfo.has_prev = true;
 		addpoint(ev->event_x, ev->event_y, drawinfo.color, drawinfo.brush_size, true);
 		pizarra_render(pizarra);
 		break;
@@ -387,7 +419,15 @@ h_motion_notify(xcb_motion_notify_event_t *ev)
 	}
 
 	if (drawinfo.active) {
-		addpoint(ev->event_x, ev->event_y, drawinfo.color, drawinfo.brush_size, true);
+		if (drawinfo.has_prev) {
+			addsegment(drawinfo.last_x, drawinfo.last_y, ev->event_x, ev->event_y,
+					drawinfo.color, drawinfo.brush_size, true);
+		} else {
+			addpoint(ev->event_x, ev->event_y, drawinfo.color, drawinfo.brush_size, true);
+			drawinfo.has_prev = true;
+		}
+		drawinfo.last_x = ev->event_x;
+		drawinfo.last_y = ev->event_y;
 		pizarra_render(pizarra);
 	}
 }
@@ -398,6 +438,7 @@ h_button_release(xcb_button_release_event_t *ev)
 	switch (ev->detail) {
 	case XCB_BUTTON_INDEX_1:
 		drawinfo.active = false;
+		drawinfo.has_prev = false;
 #ifndef ZINC_NO_HISTORY
 		if (NULL == hist_last_action)
 			break;
@@ -468,6 +509,7 @@ main(int argc, char **argv)
 
 	drawinfo.color = 0xffffff;
 	drawinfo.brush_size = 5;
+	drawinfo.has_prev = false;
 
 	pizarra = pizarra_new(conn, win);
 	picker = picker_new(conn, win, h_picker_color_change);
